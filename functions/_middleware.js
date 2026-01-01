@@ -26,7 +26,7 @@ export async function onRequest(context) {
       const userKey = getCookie(request, "auth_vip");
       if(!userKey) return new Response("Unauthorized", {status: 401});
       
-      const keyVal = await env.PRO_1.get(userKey);
+      const keyVal = await env.WEB1.get(userKey);
       if(!keyVal) return new Response("Invalid", {status: 401});
       
       const data = JSON.parse(keyVal);
