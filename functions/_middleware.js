@@ -45,7 +45,7 @@ export async function onRequest(context) {
   if (url.pathname === "/api/heartbeat") {
       const userKey = getCookie(request, "auth_vip");
       if(!userKey) return new Response("No Key", {status: 401});
-      const keyVal = await env.PRO_1.get(userKey);
+      const keyVal = await env.WEB1.get(userKey);
       if(!keyVal) return new Response("Invalid Key", {status: 401, headers: { "Set-Cookie": "auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0" }});
       
       const d = JSON.parse(keyVal);
@@ -70,7 +70,7 @@ export async function onRequest(context) {
         const deviceId = (formData.get("device_id") || "unknown").trim();
         
         if (!inputKey) return new Response(renderLoginPage("Vui lòng nhập Key!"), {headers:{"Content-Type":"text/html"}});
-        const keyVal = await env.PRO_1.get(inputKey);
+        const keyVal = await env.WEB1.get(inputKey);
         if (!keyVal) return new Response(renderLoginPage("Key không tồn tại!"), {headers:{"Content-Type":"text/html"}});
         
         let keyData = JSON.parse(keyVal);
@@ -95,7 +95,7 @@ export async function onRequest(context) {
             if (devices.length >= keyData.max_devices) return new Response(renderLoginPage(`Quá giới hạn thiết bị (${keyData.max_devices})!`), {headers:{"Content-Type":"text/html"}});
             devices.push({ id: deviceId, ip: request.headers.get("CF-Connecting-IP") });
             keyData.devices = devices;
-            await env.PRO_1.put(inputKey, JSON.stringify(keyData));
+            await env.WEB1.put(inputKey, JSON.stringify(keyData));
         }
 
         return new Response(null, {
@@ -110,7 +110,7 @@ export async function onRequest(context) {
   if (url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/free.html" || url.pathname === "/vip.html") {
       const userKey = getCookie(request, "auth_vip");
       if (userKey) {
-          const keyVal = await env.PRO_1.get(userKey);
+          const keyVal = await env.WEB1.get(userKey);
           if (keyVal) {
               const d = JSON.parse(keyVal);
               if (d.expires_at && Date.now() < d.expires_at) {
