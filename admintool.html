@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Key Generator V2</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f4f8; margin:0; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1000px; margin: 0 auto; }
+        h1 { margin-top: 0; color: #1e3a8a; text-align: center; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .group { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        label { display: block; font-weight: 700; font-size: 13px; margin-bottom: 5px; color: #475569; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; margin-bottom: 10px; }
+        button.gen { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; }
+        button.gen:hover { background: #1d4ed8; }
+        .output { margin-top: 20px; }
+        .row { display: flex; gap: 10px; margin-bottom: 5px; }
+        .row input { font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛠️ Key Generator Pro</h1>
+        <div class="grid">
+            <div class="group">
+                <label>Loại Key:</label>
+                <select id="type">
+                    <option value="VIP">OFFICIAL (Chính Thức)</option>
+                    <option value="TEMP">TEMP (Dùng Thử 24h)</option>
+                </select>
+                <label>Gói:</label>
+                <select id="package" onchange="updateDur()">
+                    <option value="7">1 Tuần (Cá Nhân)</option>
+                    <option value="30" selected>1 Tháng (Cá Nhân)</option>
+                    <option value="team">1 Tháng (Đội Nhóm)</option>
+                    <option value="custom">Tùy chỉnh</option>
+                </select>
+                <input type="number" id="custom-days" placeholder="Số ngày..." style="display:none">
+                <input type="number" id="custom-devices" placeholder="Số thiết bị..." style="display:none">
+            </div>
+            <div class="group">
+                <label>Số lượng Key:</label>
+                <input type="number" id="qty" value="1">
+                <label>Ghi chú (Tên khách):</label>
+                <input type="text" id="note" placeholder="Auto...">
+                <button class="gen" onclick="generate()">TẠO KEY</button>
+            </div>
+        </div>
+        <div class="output" id="list"></div>
+    </div>
+    <script>
+        function updateDur() {
+            const val = document.getElementById('package').value;
+            const customMode = val === 'custom';
+            document.getElementById('custom-days').style.display = customMode ? 'block' : 'none';
+            document.getElementById('custom-devices').style.display = customMode ? 'block' : 'none';
+        }
+
+        function generate() {
+            const type = document.getElementById('type').value;
+            const pkg = document.getElementById('package').value;
+            const qty = parseInt(document.getElementById('qty').value);
+            const list = document.getElementById('list');
+            list.innerHTML = '';
+
+            let days = 30; let devs = 2;
+            if(pkg === '7') { days = 7; devs = 2; }
+            if(pkg === 'team') { days = 30; devs = 15; }
+            if(pkg === 'custom') {
+                days = parseInt(document.getElementById('custom-days').value) || 1;
+                devs = parseInt(document.getElementById('custom-devices').value) || 1;
+            }
+
+            // Logic TEMP: Luôn là 1 ngày, Note là TEMP
+            if(type === 'TEMP') {
+                days = 1; 
+            }
+
+            const durationSec = days * 86400;
+
+            for(let i=0; i<qty; i++) {
+                // Key 15 chars: Prefix (VIP/TMP) + 12 random
+                const prefix = type === 'TEMP' ? 'TMP-' : 'VIP-';
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Bỏ I, O, 1, 0 cho dễ nhìn
+                let rnd = '';
+                for(let k=0; k<12; k++) rnd += chars.charAt(Math.floor(Math.random() * chars.length));
+                const key = prefix + rnd;
+
+                const data = {
+                    duration_seconds: durationSec,
+                    max_devices: devs,
+                    activated_at: type === 'TEMP' ? Date.now() : null, // Temp active ngay
+                    expires_at: type === 'TEMP' ? Date.now() + (86400*1000) : null,
+                    devices: [],
+                    type: type, // VIP or TEMP
+                    note: document.getElementById('note').value || (type+'_'+pkg),
+                    created_at: new Date().toISOString()
+                };
+
+                const div = document.createElement('div');
+                div.className = 'row';
+                div.innerHTML = `
+                    <input type="text" value="${key}" style="width:30%" onclick="this.select()">
+                    <input type="text" value='${JSON.stringify(data)}' style="width:60%" onclick="this.select()">
+                    <button onclick="navigator.clipboard.writeText('${key}')">Copy</button>
+                `;
+                list.appendChild(div);
+            }
+        }
+    </script>
+</body>
+</html>
