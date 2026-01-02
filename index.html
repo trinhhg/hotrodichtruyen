@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trịnh Hg Tools - Hệ Thống Dịch Thuật</title>
+  <title>Trịnh Hg Tools - Dịch Thuật VIP</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="index.css">
@@ -12,61 +12,40 @@
 
   <div id="landing-page" class="landing-wrapper">
       <div class="landing-hero">
-          <div class="hero-bg"></div>
           <div class="hero-content">
-              <h1 class="animate-up">CÔNG CỤ HỖ TRỢ DỊCH THUẬT & EDIT TRUYỆN</h1>
-              <p class="animate-up delay-1">Hệ thống xử lý văn bản chuyên nghiệp: Thay thế hàng loạt, Auto Caps, Chia chương, Chuẩn hóa Format.</p>
+              <h1>CÔNG CỤ HỖ TRỢ DỊCH THUẬT & EDIT TRUYỆN</h1>
               
-              <div class="login-container animate-up delay-2">
+              <div class="login-container">
                   <div class="login-header">
                       <i class="fas fa-shield-alt"></i> ĐĂNG NHẬP HỆ THỐNG
                   </div>
                   <form id="login-form">
                       <div class="input-wrapper">
                           <i class="fas fa-key"></i>
-                          <input type="password" id="secret-key-input" placeholder="Nhập License Key kích hoạt..." required>
+                          <input type="password" id="secret-key-input" placeholder="Nhập License Key..." required>
                       </div>
                       <button type="submit" class="btn-hero" id="btn-login-submit">
                           <span>KÍCH HOẠT NGAY</span> <i class="fas fa-arrow-right"></i>
                       </button>
                   </form>
-                  <div class="login-footer">
-                      Chưa có Key? Kéo xuống để mua tự động.
-                  </div>
-              </div>
-          </div>
-      </div>
-
-      <div class="features-section">
-          <h2 class="sec-title">TÍNH NĂNG NỔI BẬT</h2>
-          <div class="features-grid">
-              <div class="f-card">
-                  <div class="icon"><i class="fas fa-random"></i></div>
-                  <h3>Thay Thế Thông Minh</h3>
-                  <p>Hỗ trợ Regex, Match Case, Whole Word. Xử lý hàng nghìn cặp từ trong giây lát.</p>
-              </div>
-              <div class="f-card">
-                  <div class="icon"><i class="fas fa-magic"></i></div>
-                  <h3>Auto Format</h3>
-                  <p>Tự động viết hoa đầu câu, chuẩn hóa hội thoại, sửa lỗi chính tả cơ bản.</p>
-              </div>
-              <div class="f-card">
-                  <div class="icon"><i class="fas fa-cut"></i></div>
-                  <h3>Chia Chương</h3>
-                  <p>Tách gộp chương truyện theo số lượng từ hoặc Regex tùy chỉnh.</p>
+                  <p class="login-hint">Hệ thống sẽ tự động chuyển hướng khi thành công.</p>
               </div>
           </div>
       </div>
 
       <div class="pricing-section">
           <h2 class="sec-title">MUA KEY TỰ ĐỘNG</h2>
-          <p class="sub-title">Hệ thống tự động gửi Key sau 30 giây thanh toán</p>
           <div class="buy-widget-container" id="landing-buy-widget"></div>
       </div>
 
       <div class="landing-footer">
-          <p>&copy; 2025 Tiện Ích Trịnh Hg.</p>
-          <a href="https://www.facebook.com/trinh.hg.57" target="_blank" class="contact-link"><i class="fab fa-facebook"></i> Liên hệ Admin</a>
+          <div class="footer-content">
+              <span>&copy; 2025 Tiện Ích Trịnh Hg. All rights reserved.</span>
+              <span class="separator">|</span>
+              <a href="https://www.facebook.com/trinh.hg.57" target="_blank" class="admin-link">
+                  <i class="fab fa-facebook"></i> Liên hệ Admin
+              </a>
+          </div>
       </div>
   </div>
 
@@ -118,7 +97,7 @@
                       <div class="header-actions">
                          <select id="mode-select" class="form-select"></select>
                          <button id="add-mode" class="btn-mini btn-primary">+ Mode</button>
-                         <button id="rename-mode" class="btn-mini btn-warning">Sửa tên</button>
+                         <button id="rename-mode" class="btn-mini btn-warning">Sửa</button>
                          <button id="delete-mode" class="btn-mini btn-danger">Xóa</button>
                       </div>
                     </div>
@@ -162,11 +141,11 @@
                             </div>
                             <div class="format-card" data-format="2">
                                 <div class="rad"></div> <b>Xuống dòng</b>
-                                <p><span class="dim">Hắn cười:</span><br><br>"Chúc mừng năm mới!"<br><br>"Vạn sự như ý."</p>
+                                <p><span class="dim">Hắn cười:</span><br><br>"Chúc mừng năm mới!"</p>
                             </div>
                              <div class="format-card" data-format="3">
                                 <div class="rad"></div> <b>Gạch đầu dòng</b>
-                                <p><span class="dim">Hắn cười:</span><br><br>- Chúc mừng năm mới!<br><br>- Vạn sự như ý.</p>
+                                <p><span class="dim">Hắn cười:</span><br><br>- Chúc mừng năm mới!</p>
                             </div>
                          </div>
                     </div>
@@ -196,11 +175,11 @@
                     <div class="panel-header"><h2>Hướng Dẫn Sử Dụng</h2></div>
                     <div class="panel-body instruction-content">
                         <h3>1. Quản Lý Thay Thế</h3>
-                        <p>Tab "Cài đặt" cho phép bạn thêm, sửa, xóa các cặp từ khóa cần thay thế. Bạn có thể tạo nhiều "Mode" khác nhau cho từng bộ truyện.</p>
-                        <h3>2. Tab Thay Thế</h3>
-                        <p>Dán văn bản vào ô bên trái, nhấn "Thực Hiện". Hệ thống sẽ áp dụng danh sách thay thế, Auto Caps và Format hội thoại.</p>
-                        <h3>3. Chia Chương</h3>
-                        <p>Dán truyện full vào, chọn số phần muốn chia hoặc dùng Regex để tách theo chương (VD: Chương 1, Chapter 1...).</p>
+                        <p>Vào tab "Cài đặt" > "Quản Lý Thay Thế" để thêm các cặp từ. Hệ thống hỗ trợ Regex và các tùy chọn Match Case, Whole Word.</p>
+                        <h3>2. Auto Caps & Format</h3>
+                        <p>Hệ thống tự động viết hoa sau dấu chấm. Bạn có thể thêm ngoại lệ. Chọn kiểu Format hội thoại ở mục "Chuẩn Hóa Format".</p>
+                        <h3>3. Thanh Toán</h3>
+                        <p>Chọn gói, quét mã QR. Key sẽ được tự động tạo và đăng nhập sau khi thanh toán thành công.</p>
                     </div>
                 </div>
 
@@ -271,7 +250,6 @@
       </div>
   </div>
   
-  <div id="notification-container"></div>
   <script src="index.js"></script>
 </body>
 </html>
