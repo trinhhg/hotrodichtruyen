@@ -5,7 +5,7 @@
     <title>TrinhHG Admin Panel</title>
     <style>
         body { font-family: sans-serif; background: #f1f5f9; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .container { max-width: 1100px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #1e293b; }
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
         .tab { padding: 10px 20px; cursor: pointer; font-weight: bold; color: #64748b; }
@@ -18,37 +18,55 @@
         th { background: #f8fafc; }
         .btn { padding: 5px 10px; cursor: pointer; color: white; border: none; border-radius: 4px; }
         .btn-approve { background: #10b981; }
-        .btn-refresh { background: #3b82f6; margin-bottom: 10px; }
+        .btn-reject { background: #ef4444; }
+        .btn-refresh { background: #3b82f6; margin-bottom: 10px; padding: 10px 20px; font-weight: bold; }
+        
+        .badge-match { background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        .badge-mismatch { background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        
+        /* Manual Tool CSS */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        input { padding: 8px; width: 100%; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .gen-btn { width: 100%; background: #2563eb; color: white; padding: 10px; border: none; border-radius: 4px; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>ADMIN PANEL</h1>
         <div class="tabs">
-            <div class="tab" onclick="switchTab('create')">Tạo Key</div>
+            <div class="tab" onclick="switchTab('create')">Tạo Key Thủ Công</div>
             <div class="tab active" onclick="switchTab('approve')">Duyệt Key Tạm</div>
         </div>
 
+        <div id="create" class="panel">
+            <h3>Tạo Key Thủ Công</h3>
+            <p>Sử dụng khi khách mua trực tiếp hoặc tặng key. Copy JSON bên dưới và dán vào KV Namespace.</p>
+            <div class="grid-2">
+                <div><label>Loại:</label><select id="mn-type" style="width:100%;padding:8px;"><option value="permanent">Official</option><option value="temp">Temp</option></select></div>
+                <div><label>Thiết bị:</label><input type="number" id="mn-dev" value="2"></div>
+                <div><label>Ngày:</label><input type="number" id="mn-days" value="30"></div>
+                <div><label>Ghi chú:</label><input type="text" id="mn-note" placeholder="Tên khách"></div>
+            </div>
+            <button class="gen-btn" onclick="genManual()">TẠO DATA</button>
+            <textarea id="mn-out" style="width:100%; height:100px; margin-top:10px; font-family:monospace;"></textarea>
+        </div>
+
         <div id="approve" class="panel active">
-            <button class="btn btn-refresh" onclick="loadTempKeys()">Làm mới danh sách</button>
+            <button class="btn btn-refresh" onclick="loadTempKeys()">🔄 Làm mới danh sách</button>
             <table>
                 <thead>
                     <tr>
                         <th>Key Tạm</th>
-                        <th>Mã GD</th>
-                        <th>Số tiền</th>
-                        <th>Thời gian tạo</th>
+                        <th>Mã GD (Nội dung CK)</th>
+                        <th>Số tiền nhận</th>
+                        <th>Khớp Gói?</th>
                         <th>Hành động</th>
                     </tr>
                 </thead>
                 <tbody id="temp-table-body">
-                    <tr><td colspan="5">Đang tải...</td></tr>
+                    <tr><td colspan="5">Đang tải dữ liệu...</td></tr>
                 </tbody>
             </table>
-        </div>
-
-        <div id="create" class="panel">
-            <p>Form tạo key thủ công (Copy từ code cũ nếu cần)...</p>
         </div>
     </div>
 
@@ -68,35 +86,43 @@
             tbody.innerHTML = '<tr><td colspan="5">Đang tải...</td></tr>';
             try {
                 const res = await fetch('/api/admin/list-temp', { headers: { 'x-admin-secret': ADMIN_SECRET } });
+                if(!res.ok) throw new Error("Auth Failed");
                 const data = await res.json();
                 tbody.innerHTML = '';
-                if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Không có key tạm nào</td></tr>'; return; }
+                if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Không có key tạm nào cần duyệt.</td></tr>'; return; }
 
                 data.forEach(item => {
                     const row = document.createElement('tr');
-                    const paid = item.paid_amount ? item.paid_amount.toLocaleString() + ' đ' : '0 đ';
-                    const time = new Date(item.activated_at).toLocaleString('vi-VN');
+                    const paid = item.paid_amount || 0;
+                    
+                    // Logic kiểm tra số tiền (Gợi ý màu sắc)
+                    let statusHtml = '<span class="badge-mismatch">?</span>';
+                    let btnColor = 'background:#ccc';
+                    
+                    // Logic đoán gói (Cá nhân 40k, Team 80k...)
+                    if(paid >= 40000) statusHtml = '<span class="badge-match">Gói Tháng</span>';
+                    else if(paid >= 15000) statusHtml = '<span class="badge-match">Gói Tuần</span>';
+                    else statusHtml = '<span class="badge-mismatch">Lẻ / Sai</span>';
+
                     row.innerHTML = `
-                        <td>${item.key}</td>
-                        <td>${item.trans_code || '-'}</td>
-                        <td style="color:green; font-weight:bold;">${paid}</td>
-                        <td>${time}</td>
+                        <td style="font-family:monospace; color:#2563eb;">${item.key}</td>
+                        <td>${item.trans_code} <br> <small style="color:#666">${item.raw_message || ''}</small></td>
+                        <td style="font-weight:bold;">${paid.toLocaleString()} đ</td>
+                        <td>${statusHtml}</td>
                         <td>
-                            <button class="btn btn-approve" onclick="upgradeKey('${item.key}', ${item.paid_amount || 0})">DUYỆT NGAY</button>
+                            <button class="btn btn-approve" onclick="upgradeKey('${item.key}', ${paid})">DUYỆT</button>
                         </td>
                     `;
                     tbody.appendChild(row);
                 });
-            } catch(e) { alert('Lỗi tải danh sách: ' + e); }
+            } catch(e) { tbody.innerHTML = `<tr><td colspan="5" style="color:red">Lỗi: ${e.message}. Kiểm tra lại Secret Key.</td></tr>`; }
         }
 
         async function upgradeKey(key, amount) {
-            // Tự động tính ngày dựa trên số tiền (Logic gợi ý)
-            let days = 30; // Mặc định 1 tháng
-            if(amount < 40000 && amount > 10000) days = 7;
-            if(amount >= 80000) days = 60;
-
-            const finalDays = prompt(`Duyệt key này bao nhiêu ngày? (Tiền nhận: ${amount.toLocaleString()}đ)`, days);
+            let days = 30; // Mặc định
+            if(amount < 20000) days = 7;
+            
+            const finalDays = prompt(`Duyệt key này thành bao nhiêu ngày?\n(Tiền nhận: ${amount.toLocaleString()}đ)`, days);
             if(!finalDays) return;
 
             try {
@@ -107,11 +133,30 @@
                 });
                 const d = await res.json();
                 if(d.success) { alert("Đã duyệt thành công!"); loadTempKeys(); }
-                else alert("Lỗi server");
-            } catch(e) { alert(e); }
+                else alert("Lỗi: " + d.message);
+            } catch(e) { alert("Lỗi kết nối server"); }
         }
 
-        // Load mặc định
+        function genManual() {
+            const type = document.getElementById('mn-type').value;
+            const dev = parseInt(document.getElementById('mn-dev').value);
+            const days = parseInt(document.getElementById('mn-days').value);
+            const note = document.getElementById('mn-note').value;
+            
+            const key = (type==='permanent' ? 'VIP-' : 'TEMP-') + Math.random().toString(36).substr(2, 8).toUpperCase();
+            const data = {
+                type: type, status: type==='permanent' ? 'official' : 'temp',
+                duration_seconds: days * 86400,
+                max_devices: dev,
+                devices: [],
+                activated_at: null,
+                expires_at: null,
+                note: note
+            };
+            
+            document.getElementById('mn-out').value = `KEY: ${key}\nVALUE: ${JSON.stringify(data)}`;
+        }
+        
         loadTempKeys();
     </script>
 </body>
