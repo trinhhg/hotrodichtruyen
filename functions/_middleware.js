@@ -1,15 +1,25 @@
 // === CẤU HÌNH HỆ THỐNG ===
-// Bot 1: Báo cáo Admin (Login, Tiền về, Key mới)
 const TG_NOTIFY_BOT_TOKEN = "8317998690:AAEJ51BLc6wp2gRAiTnM2qEyB4sXHYoN7lI"; 
-// Bot 2: Log Webhook Raw (Nhận tin nhắn từ điện thoại)
 const TG_PAYMENT_BOT_TOKEN = "8551019963:AAEld8A0Cibfnl2f-PUtwOvo_ab68_4Il0U"; 
 const TG_ADMIN_ID = "5524168349";
 const ADMIN_SECRET = "trinhhg_admin_secret_123"; 
-const APP_VERSION = "2025.12.12.01";
+const APP_VERSION = "2025.12.12.05";
+
+// CORS Headers chuẩn
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, x-admin-secret",
+};
 
 export async function onRequest(context) {
   const { request, env, next } = context;
   const url = new URL(request.url);
+
+  // --- XỬ LÝ PREFLIGHT (CORS) ---
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   // --- HELPERS ---
   async function sendTelegram(token, chatId, msg) {
@@ -36,14 +46,10 @@ export async function onRequest(context) {
           const data = await request.json();
           const message = (data.message || "").toUpperCase(); 
           const title = data.title || "";
-          const appName = data.app || "App";
           
           if (title.includes("HIỂN THỊ TRÊN") || message.includes("ĐANG CHẠY")) {
-             return new Response(JSON.stringify({ skipped: true }));
+             return new Response(JSON.stringify({ skipped: true }), { headers: corsHeaders });
           }
-
-          // Gửi Log thô về Bot Payment
-          context.waitUntil(sendTelegram(TG_PAYMENT_BOT_TOKEN, TG_ADMIN_ID, `📩 <b>RAW:</b> ${message}`));
 
           // A. Bóc tách số tiền (VD: +10,000VND)
           let amount = 0;
@@ -68,9 +74,9 @@ export async function onRequest(context) {
                   expires_at: now + 86400000,
                   max_devices: 2,
                   devices: [],
-                  paid_amount: amount, // Số tiền thực nhận
+                  paid_amount: amount, 
                   trans_code: transCode,
-                  raw_message: message, // Lưu nội dung CK để đối chiếu
+                  raw_message: message, 
                   note: `Auto-gen: ${transCode}`
               };
 
@@ -78,23 +84,110 @@ export async function onRequest(context) {
               await env.WEB1.put(tempKey, JSON.stringify(keyData));
               await env.WEB1.put(`TRANS_${transCode}`, tempKey, {expirationTtl: 3600});
 
-              // Báo Admin (Notify Bot)
-              const notifyMsg = `
-💰 <b>TIỀN VỀ:</b> ${amount.toLocaleString()} VND
-Mã GD: <code>${transCode}</code>
-Key Tạm: <code>${tempKey}</code>
-<i>Vào Admin Tool để duyệt chính thức!</i>
-`;
+              // Báo Admin
+              const notifyMsg = `💰 <b>TIỀN VỀ:</b> ${amount.toLocaleString()} VND\nMã GD: <code>${transCode}</code>\nKey Tạm: <code>${tempKey}</code>`;
               context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, notifyMsg));
           }
 
-          return new Response(JSON.stringify({ success: true }));
+          return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       } catch (e) {
-          return new Response(JSON.stringify({ error: e.message }), { status: 400 });
+          return new Response(JSON.stringify({ error: e.message }), { status: 400, headers: corsHeaders });
       }
   }
 
-  // --- 2. LOGIN (LOGIC + NOTIFICATION) ---
+  // --- 2. ADMIN API: LIST TEMP KEYS ---
+  if (url.pathname === "/api/admin/list-temp") {
+      const secret = request.headers.get("x-admin-secret");
+      if(secret !== ADMIN_SECRET) return new Response("Unauthorized", {status: 401, headers: corsHeaders});
+
+      const list = await env.WEB1.list({ prefix: "TEMP-" });
+      const keys = [];
+      for(const k of list.keys) {
+          const val = await env.WEB1.get(k.name);
+          if(val) {
+              const d = JSON.parse(val);
+              if(d.status !== 'official') keys.push({ key: k.name, ...d });
+          }
+      }
+      return new Response(JSON.stringify(keys), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+  }
+
+  // --- 3. ADMIN API: UPGRADE KEY ---
+  if (url.pathname === "/api/admin/upgrade" && request.method === "POST") {
+      const secret = request.headers.get("x-admin-secret");
+      if(secret !== ADMIN_SECRET) return new Response("Unauthorized", {status: 401, headers: corsHeaders});
+
+      const body = await request.json();
+      const { key, duration, devices } = body; 
+
+      const val = await env.WEB1.get(key);
+      if(!val) return new Response("Key not found", {status: 404, headers: corsHeaders});
+
+      const data = JSON.parse(val);
+      const now = Date.now();
+
+      // Nâng cấp thành Official
+      data.type = "permanent";
+      data.status = "official";
+      data.duration_seconds = parseInt(duration);
+      data.max_devices = parseInt(devices);
+      data.activated_at = now; 
+      data.expires_at = now + (data.duration_seconds * 1000);
+      data.note += " [APPROVED]";
+
+      await env.WEB1.put(key, JSON.stringify(data));
+      context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, `✅ <b>APPROVED:</b> ${key}`));
+
+      return new Response(JSON.stringify({ success: true }), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+  }
+
+  // --- 4. CHECK PAYMENT (POLLING) ---
+  if (url.pathname === "/api/check-payment") {
+      const code = url.searchParams.get("code");
+      const key = await env.WEB1.get(`TRANS_${code}`);
+      
+      // Nếu có key, kiểm tra số tiền (Logic backend đơn giản, frontend sẽ check kỹ hơn hoặc admin check)
+      let amount = 0;
+      if(key) {
+          const keyVal = await env.WEB1.get(key);
+          if(keyVal) {
+              const d = JSON.parse(keyVal);
+              amount = d.paid_amount || 0;
+          }
+      }
+
+      return new Response(JSON.stringify({ 
+          status: key ? 'success' : 'pending', 
+          key: key,
+          amount: amount 
+      }), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+  }
+
+  // --- 5. KEY INFO & HEARTBEAT ---
+  if (url.pathname === "/api/key-info") {
+      const userKey = getCookie(request, "auth_vip");
+      if(!userKey) return new Response("Unauthorized", {status: 401, headers: corsHeaders});
+      const val = await env.WEB1.get(userKey);
+      if(!val) return new Response("Not Found", {status: 404, headers: corsHeaders});
+      const d = JSON.parse(val);
+      return new Response(JSON.stringify({
+          key: userKey, type: d.type, status: d.status,
+          activated_at: d.activated_at, expires_at: d.expires_at,
+          max_devices: d.max_devices, current_devices: (d.devices||[]).length
+      }), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+  }
+
+  if (url.pathname === "/api/heartbeat") {
+      const userKey = getCookie(request, "auth_vip");
+      if(!userKey) return new Response("No Key", {status: 401, headers: corsHeaders});
+      const val = await env.WEB1.get(userKey);
+      if(!val) return new Response("Invalid", {status: 401, headers: corsHeaders});
+      const d = JSON.parse(val);
+      if(d.expires_at && Date.now() > d.expires_at) return new Response("Expired", {status: 401, headers: corsHeaders});
+      return new Response("OK", { status: 200, headers: { ...corsHeaders, "x-app-version": APP_VERSION } });
+  }
+
+  // --- 6. LOGIN ---
   if (url.pathname === "/login" && request.method === "POST") {
     try {
         const formData = await request.json();
@@ -103,34 +196,25 @@ Key Tạm: <code>${tempKey}</code>
         const ip = request.headers.get("CF-Connecting-IP") || "Unknown";
 
         const keyVal = await env.WEB1.get(inputKey);
-        
-        if (!keyVal) {
-            context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, `❌ <b>LOGIN FAIL (No Key):</b> ${inputKey} | IP: ${ip}`));
-            return new Response(JSON.stringify({success: false, message: "Key không tồn tại!"}), {headers:{"Content-Type":"application/json"}});
-        }
+        if (!keyVal) return new Response(JSON.stringify({success: false, message: "Key không tồn tại!"}), {headers:{"Content-Type":"application/json"}});
 
         let keyData = JSON.parse(keyVal);
         const now = Date.now();
 
-        // Kích hoạt lần đầu
         if (!keyData.activated_at) {
             keyData.activated_at = now;
             keyData.expires_at = now + (keyData.duration_seconds * 1000);
             keyData.devices = [];
         }
 
-        // Check hết hạn
         if (keyData.expires_at && now > keyData.expires_at) {
-             context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, `⚠️ <b>LOGIN FAIL (Expired):</b> ${inputKey}`));
              return new Response(JSON.stringify({success: false, message: "Key đã hết hạn sử dụng!"}), {headers:{"Content-Type":"application/json"}});
         }
 
-        // Check thiết bị
         let devices = keyData.devices || [];
         const existing = devices.find(d => d.id === deviceId);
         if (!existing) {
             if (devices.length >= keyData.max_devices) {
-                context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, `🚫 <b>LOGIN BLOCK (Max Dev):</b> ${inputKey}`));
                 return new Response(JSON.stringify({success: false, message: `Key này đã đạt giới hạn ${keyData.max_devices} thiết bị!`}), {headers:{"Content-Type":"application/json"}});
             }
             devices.push({ id: deviceId, ip: ip, ua: request.headers.get("User-Agent") });
@@ -138,105 +222,28 @@ Key Tạm: <code>${tempKey}</code>
             await env.WEB1.put(inputKey, JSON.stringify(keyData));
         }
 
-        // Success Log
-        const msg = `🚀 <b>LOGIN OK:</b> ${inputKey}\nDev: ${devices.length}/${keyData.max_devices}\nIP: ${ip}`;
+        const msg = `🚀 <b>LOGIN:</b> ${inputKey}\nDev: ${devices.length}/${keyData.max_devices}`;
         context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, msg));
 
         return new Response(JSON.stringify({success: true}), {
             status: 200,
-            headers: { "Content-Type": "application/json", "Set-Cookie": `auth_vip=${inputKey}; Path=/; HttpOnly; Secure; Max-Age=31536000; SameSite=Lax` },
+            headers: { 
+                "Content-Type": "application/json",
+                "Set-Cookie": `auth_vip=${inputKey}; Path=/; HttpOnly; Secure; Max-Age=31536000; SameSite=Lax`,
+                ...corsHeaders 
+            },
         });
-
     } catch (e) {
-        return new Response(JSON.stringify({success: false, message: "Lỗi Server: " + e.message}), {headers:{"Content-Type":"application/json"}});
+        return new Response(JSON.stringify({success: false, message: "Lỗi Server"}), {headers:{"Content-Type":"application/json"}});
     }
   }
 
-  // --- 3. ADMIN API: LIST TEMP KEYS ---
-  if (url.pathname === "/api/admin/list-temp") {
-      const secret = request.headers.get("x-admin-secret");
-      if(secret !== ADMIN_SECRET) return new Response("Unauthorized", {status: 401});
-
-      const list = await env.WEB1.list({ prefix: "TEMP-" });
-      const keys = [];
-      for(const k of list.keys) {
-          const val = await env.WEB1.get(k.name);
-          if(val) {
-              const d = JSON.parse(val);
-              // Lấy key chưa phải official
-              if(d.status !== 'official') keys.push({ key: k.name, ...d });
-          }
-      }
-      return new Response(JSON.stringify(keys), {headers: {"Content-Type": "application/json"}});
-  }
-
-  // --- 4. ADMIN API: UPGRADE KEY ---
-  if (url.pathname === "/api/admin/upgrade" && request.method === "POST") {
-      const secret = request.headers.get("x-admin-secret");
-      if(secret !== ADMIN_SECRET) return new Response("Unauthorized", {status: 401});
-
-      const body = await request.json();
-      const { key, duration, devices } = body; // duration is seconds
-
-      const val = await env.WEB1.get(key);
-      if(!val) return new Response("Key not found", {status: 404});
-
-      const data = JSON.parse(val);
-      const now = Date.now();
-
-      // Tính toán thời gian: Nếu đang dùng thử, Reset lại ngày bắt đầu là hôm nay
-      // Nếu là gia hạn key cũ (VIP), cộng dồn. Ở đây xử lý duyệt TEMP -> OFFICIAL
-      
-      data.type = "permanent";
-      data.status = "official";
-      data.duration_seconds = parseInt(duration);
-      data.max_devices = parseInt(devices);
-      data.activated_at = now; // Reset activated time to NOW when approved
-      data.expires_at = now + (data.duration_seconds * 1000);
-      data.note += " [APPROVED]";
-
-      await env.WEB1.put(key, JSON.stringify(data));
-      context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, `✅ <b>APPROVED:</b> ${key}\nExp: ${new Date(data.expires_at).toLocaleDateString('vi-VN')}`));
-
-      return new Response(JSON.stringify({ success: true }), {headers: {"Content-Type": "application/json"}});
-  }
-
-  // --- 5. LOGOUT ---
+  // --- 7. LOGOUT ---
   if (url.pathname === "/logout") {
-      const userKey = getCookie(request, "auth_vip");
-      if(userKey) context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, `👋 <b>LOGOUT:</b> ${userKey}`));
-      return new Response(null, { status: 302, headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } });
-  }
-
-  // --- 6. CHECK PAYMENT (POLLING) ---
-  if (url.pathname === "/api/check-payment") {
-      const code = url.searchParams.get("code");
-      const key = await env.WEB1.get(`TRANS_${code}`);
-      return new Response(JSON.stringify({ status: key ? 'success' : 'pending', key: key }), {headers: {"Content-Type": "application/json"}});
-  }
-
-  // --- 7. KEY INFO (HEARTBEAT) ---
-  if (url.pathname === "/api/key-info") {
-      const userKey = getCookie(request, "auth_vip");
-      if(!userKey) return new Response("Unauthorized", {status: 401});
-      const val = await env.WEB1.get(userKey);
-      if(!val) return new Response("Not Found", {status: 404});
-      const d = JSON.parse(val);
-      return new Response(JSON.stringify({
-          key: userKey, type: d.type, status: d.status,
-          activated_at: d.activated_at, expires_at: d.expires_at,
-          max_devices: d.max_devices, current_devices: (d.devices||[]).length
-      }), {headers: {"Content-Type": "application/json"}});
-  }
-
-  if (url.pathname === "/api/heartbeat") {
-      const userKey = getCookie(request, "auth_vip");
-      if(!userKey) return new Response("No Key", {status: 401});
-      const val = await env.WEB1.get(userKey);
-      if(!val) return new Response("Invalid", {status: 401});
-      const d = JSON.parse(val);
-      if(d.expires_at && Date.now() > d.expires_at) return new Response("Expired", {status: 401});
-      return new Response("OK", { status: 200, headers: { "x-app-version": APP_VERSION } });
+      return new Response(null, { 
+          status: 302, 
+          headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } 
+      });
   }
 
   return next();
