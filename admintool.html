@@ -2,102 +2,117 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>TrinhHG Admin Tool</title>
+    <title>TrinhHG Admin Panel</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f4f8; margin:0; }
-        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1000px; margin: 0 auto; }
-        h1 { margin-top: 0; color: #1e3a8a; text-align: center; margin-bottom: 30px; }
-        .section-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; position: relative; }
-        .section-title { position: absolute; top: -10px; left: 15px; background: white; padding: 0 10px; font-weight: 700; color: #3b82f6; font-size: 13px; text-transform: uppercase; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .toggle-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-        .toggle-btn { padding: 8px 15px; border: 1px solid #cbd5e1; background: white; color: #64748b; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; flex: 1; text-align: center; }
-        .toggle-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
-        input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; box-sizing: border-box; font-size: 14px; }
-        .hidden { display: none; }
-        .gen-btn { background: #1e40af; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; transition: 0.2s; }
-        .gen-btn:hover { background: #1d4ed8; }
-        .output-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px dashed #cbd5e1; }
-        .output-row input { font-family: monospace; background: white; font-size: 12px; color: #334155; }
-        .copy-btn { background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; }
+        body { font-family: sans-serif; background: #f1f5f9; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #1e293b; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+        .tab { padding: 10px 20px; cursor: pointer; font-weight: bold; color: #64748b; }
+        .tab.active { color: #2563eb; border-bottom: 2px solid #2563eb; margin-bottom: -2px; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 14px; }
+        th { background: #f8fafc; }
+        .btn { padding: 5px 10px; cursor: pointer; color: white; border: none; border-radius: 4px; }
+        .btn-approve { background: #10b981; }
+        .btn-refresh { background: #3b82f6; margin-bottom: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🛠️ KEY GENERATOR</h1>
-        <div class="grid-2">
-            <div>
-                <div class="section-box">
-                    <span class="section-title">1. Loại Key & Status</span>
-                    <div class="toggle-group" id="grp-status">
-                        <div class="toggle-btn active" onclick="sel('grp-status', this, 'permanent')">OFFICIAL (Chính thức)</div>
-                        <div class="toggle-btn" onclick="sel('grp-status', this, 'temp')">TEMP (Dùng thử)</div>
-                    </div>
-                </div>
-                <div class="section-box">
-                    <span class="section-title">2. Gói Thiết Bị</span>
-                    <div class="toggle-group" id="grp-cat">
-                        <div class="toggle-btn active" onclick="sel('grp-cat', this, 2)">CÁ NHÂN (2)</div>
-                        <div class="toggle-btn" onclick="sel('grp-cat', this, 15)">ĐỘI NHÓM (15)</div>
-                        <div class="toggle-btn" onclick="sel('grp-cat', this, 'custom')">TÙY CHỈNH</div>
-                    </div>
-                    <input type="number" id="inp-devices" class="hidden" placeholder="Số thiết bị...">
-                </div>
-            </div>
-            <div>
-                <div class="section-box">
-                    <span class="section-title">3. Thời Hạn</span>
-                    <div class="toggle-group" id="grp-dur">
-                        <div class="toggle-btn" onclick="sel('grp-dur', this, 7*86400)">1 Tuần</div>
-                        <div class="toggle-btn active" onclick="sel('grp-dur', this, 30*86400)">1 Tháng</div>
-                        <div class="toggle-btn" onclick="sel('grp-dur', this, 365*86400)">1 Năm</div>
-                        <div class="toggle-btn" onclick="sel('grp-dur', this, 'custom')">Tùy Chỉnh (Giây)</div>
-                    </div>
-                    <input type="number" id="inp-seconds" class="hidden" placeholder="Nhập số giây...">
-                </div>
-                <div class="section-box">
-                    <span class="section-title">4. Thông Tin Khác</span>
-                    <input type="text" id="inp-note" placeholder="Ghi chú (Tên khách)...">
-                    <div style="margin-top:10px; display:flex; align-items:center; gap:10px;">
-                        <span style="font-size:13px; font-weight:600;">Số lượng:</span>
-                        <input type="number" id="inp-qty" value="1" min="1" style="width:80px;">
-                    </div>
-                </div>
-            </div>
+        <h1>ADMIN PANEL</h1>
+        <div class="tabs">
+            <div class="tab" onclick="switchTab('create')">Tạo Key</div>
+            <div class="tab active" onclick="switchTab('approve')">Duyệt Key Tạm</div>
         </div>
-        <button class="gen-btn" onclick="generate()">TẠO KEY NGAY</button>
-        <div id="output-list" style="margin-top:20px;"></div>
+
+        <div id="approve" class="panel active">
+            <button class="btn btn-refresh" onclick="loadTempKeys()">Làm mới danh sách</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Key Tạm</th>
+                        <th>Mã GD</th>
+                        <th>Số tiền</th>
+                        <th>Thời gian tạo</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="temp-table-body">
+                    <tr><td colspan="5">Đang tải...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="create" class="panel">
+            <p>Form tạo key thủ công (Copy từ code cũ nếu cần)...</p>
+        </div>
     </div>
+
     <script>
-        let config = { status: 'permanent', cat: 2, dur: 30*86400 };
-        function sel(grpId, el, val) {
-            document.querySelectorAll(`#${grpId} .toggle-btn`).forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            if(grpId === 'grp-status') config.status = val;
-            if(grpId === 'grp-cat') { config.cat = val; document.getElementById('inp-devices').classList.toggle('hidden', val !== 'custom'); }
-            if(grpId === 'grp-dur') { config.dur = val; document.getElementById('inp-seconds').classList.toggle('hidden', val !== 'custom'); }
+        const ADMIN_SECRET = "trinhhg_admin_secret_123";
+
+        function switchTab(id) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.target.classList.add('active');
+            if(id === 'approve') loadTempKeys();
         }
-        function generate() {
-            const list = document.getElementById('output-list'); list.innerHTML = '';
-            const qty = parseInt(document.getElementById('inp-qty').value) || 1;
-            const maxDev = (config.cat === 'custom') ? parseInt(document.getElementById('inp-devices').value)||1 : config.cat;
-            const seconds = (config.dur === 'custom') ? parseInt(document.getElementById('inp-seconds').value)||86400 : config.dur;
-            const note = document.getElementById('inp-note').value.trim() || "Generated by Admin";
-            for(let i=0; i<qty; i++) {
-                const prefix = config.status === 'permanent' ? 'VIP-' : 'TEMP-';
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                let rnd = ''; for(let j=0; j<11; j++) rnd += chars.charAt(Math.floor(Math.random() * chars.length));
-                const key = prefix + rnd;
-                const data = { duration_seconds: seconds, max_devices: maxDev, activated_at: null, expires_at: null, devices: [], note: qty > 1 ? `${note} #${i+1}` : note, type: config.status, status: config.status === 'permanent' ? 'official' : 'temp', created_at: new Date().toISOString() };
-                const div = document.createElement('div'); div.className = 'output-row';
-                div.innerHTML = `<div style="flex:1"><input type="text" value="${key}" id="k${i}" readonly style="font-weight:bold; color:#1e40af; margin-bottom:5px;"><input type="text" value='${JSON.stringify(data)}' id="v${i}" readonly style="color:#64748b;"></div><button class="copy-btn" onclick="copy('k${i}', 'v${i}')">COPY KV</button>`;
-                list.appendChild(div);
-            }
+
+        async function loadTempKeys() {
+            const tbody = document.getElementById('temp-table-body');
+            tbody.innerHTML = '<tr><td colspan="5">Đang tải...</td></tr>';
+            try {
+                const res = await fetch('/api/admin/list-temp', { headers: { 'x-admin-secret': ADMIN_SECRET } });
+                const data = await res.json();
+                tbody.innerHTML = '';
+                if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Không có key tạm nào</td></tr>'; return; }
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    const paid = item.paid_amount ? item.paid_amount.toLocaleString() + ' đ' : '0 đ';
+                    const time = new Date(item.activated_at).toLocaleString('vi-VN');
+                    row.innerHTML = `
+                        <td>${item.key}</td>
+                        <td>${item.trans_code || '-'}</td>
+                        <td style="color:green; font-weight:bold;">${paid}</td>
+                        <td>${time}</td>
+                        <td>
+                            <button class="btn btn-approve" onclick="upgradeKey('${item.key}', ${item.paid_amount || 0})">DUYỆT NGAY</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch(e) { alert('Lỗi tải danh sách: ' + e); }
         }
-        function copy(kid, vid) {
-            const k = document.getElementById(kid).value; const v = document.getElementById(vid).value;
-            navigator.clipboard.writeText(`Key: ${k}\nValue: ${v}`).then(() => alert('Copied!'));
+
+        async function upgradeKey(key, amount) {
+            // Tự động tính ngày dựa trên số tiền (Logic gợi ý)
+            let days = 30; // Mặc định 1 tháng
+            if(amount < 40000 && amount > 10000) days = 7;
+            if(amount >= 80000) days = 60;
+
+            const finalDays = prompt(`Duyệt key này bao nhiêu ngày? (Tiền nhận: ${amount.toLocaleString()}đ)`, days);
+            if(!finalDays) return;
+
+            try {
+                const res = await fetch('/api/admin/upgrade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET },
+                    body: JSON.stringify({ key, duration: parseInt(finalDays) * 86400, devices: 2 })
+                });
+                const d = await res.json();
+                if(d.success) { alert("Đã duyệt thành công!"); loadTempKeys(); }
+                else alert("Lỗi server");
+            } catch(e) { alert(e); }
         }
+
+        // Load mặc định
+        loadTempKeys();
     </script>
 </body>
 </html>
