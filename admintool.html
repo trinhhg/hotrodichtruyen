@@ -16,17 +16,15 @@
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 14px; }
         th { background: #f8fafc; }
-        .btn { padding: 5px 10px; cursor: pointer; color: white; border: none; border-radius: 4px; }
+        .btn { padding: 6px 12px; cursor: pointer; color: white; border: none; border-radius: 4px; font-weight: bold; }
         .btn-approve { background: #10b981; }
-        .btn-reject { background: #ef4444; }
-        .btn-refresh { background: #3b82f6; margin-bottom: 10px; padding: 10px 20px; font-weight: bold; }
+        .btn-refresh { background: #3b82f6; margin-bottom: 10px; }
         
-        .badge-match { background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
-        .badge-mismatch { background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        .badge-match { background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; display: inline-block; }
+        .badge-mismatch { background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; display: inline-block; }
         
-        /* Manual Tool CSS */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        input { padding: 8px; width: 100%; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        input, select { padding: 8px; width: 100%; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .gen-btn { width: 100%; background: #2563eb; color: white; padding: 10px; border: none; border-radius: 4px; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
@@ -40,14 +38,14 @@
 
         <div id="create" class="panel">
             <h3>Tạo Key Thủ Công</h3>
-            <p>Sử dụng khi khách mua trực tiếp hoặc tặng key. Copy JSON bên dưới và dán vào KV Namespace.</p>
+            <p>Copy JSON bên dưới và dán vào Cloudflare KV Namespace nếu cần.</p>
             <div class="grid-2">
-                <div><label>Loại:</label><select id="mn-type" style="width:100%;padding:8px;"><option value="permanent">Official</option><option value="temp">Temp</option></select></div>
+                <div><label>Loại:</label><select id="mn-type"><option value="permanent">Official</option><option value="temp">Temp</option></select></div>
                 <div><label>Thiết bị:</label><input type="number" id="mn-dev" value="2"></div>
                 <div><label>Ngày:</label><input type="number" id="mn-days" value="30"></div>
                 <div><label>Ghi chú:</label><input type="text" id="mn-note" placeholder="Tên khách"></div>
             </div>
-            <button class="gen-btn" onclick="genManual()">TẠO DATA</button>
+            <button class="gen-btn" onclick="genManual()">TẠO DATA JSON</button>
             <textarea id="mn-out" style="width:100%; height:100px; margin-top:10px; font-family:monospace;"></textarea>
         </div>
 
@@ -57,9 +55,9 @@
                 <thead>
                     <tr>
                         <th>Key Tạm</th>
-                        <th>Mã GD (Nội dung CK)</th>
+                        <th>Mã GD & Nội dung</th>
                         <th>Số tiền nhận</th>
-                        <th>Khớp Gói?</th>
+                        <th>Trạng thái tiền</th>
                         <th>Hành động</th>
                     </tr>
                 </thead>
@@ -85,8 +83,13 @@
             const tbody = document.getElementById('temp-table-body');
             tbody.innerHTML = '<tr><td colspan="5">Đang tải...</td></tr>';
             try {
-                const res = await fetch('/api/admin/list-temp', { headers: { 'x-admin-secret': ADMIN_SECRET } });
-                if(!res.ok) throw new Error("Auth Failed");
+                // Fetch với header đúng để không bị CORS nếu server xử lý đúng OPTIONS
+                const res = await fetch('/api/admin/list-temp', { 
+                    method: 'GET',
+                    headers: { 'x-admin-secret': ADMIN_SECRET, 'Content-Type': 'application/json' } 
+                });
+                
+                if(!res.ok) throw new Error("Auth Failed or API Error");
                 const data = await res.json();
                 tbody.innerHTML = '';
                 if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Không có key tạm nào cần duyệt.</td></tr>'; return; }
@@ -95,41 +98,48 @@
                     const row = document.createElement('tr');
                     const paid = item.paid_amount || 0;
                     
-                    // Logic kiểm tra số tiền (Gợi ý màu sắc)
-                    let statusHtml = '<span class="badge-mismatch">?</span>';
-                    let btnColor = 'background:#ccc';
-                    
-                    // Logic đoán gói (Cá nhân 40k, Team 80k...)
-                    if(paid >= 40000) statusHtml = '<span class="badge-match">Gói Tháng</span>';
-                    else if(paid >= 15000) statusHtml = '<span class="badge-match">Gói Tuần</span>';
-                    else statusHtml = '<span class="badge-mismatch">Lẻ / Sai</span>';
+                    // Logic kiểm tra số tiền (Xanh/Đỏ)
+                    let statusHtml = '';
+                    let actionBtn = '';
+
+                    // Mốc giá: 15k (7 ngày), 40k (30 ngày), 80k (Team)
+                    if (paid >= 40000) {
+                        statusHtml = `<span class="badge-match">✅ Đủ Gói Tháng (${paid.toLocaleString()})</span>`;
+                        actionBtn = `<button class="btn btn-approve" onclick="upgradeKey('${item.key}', 30, 2)">DUYỆT 30 NGÀY</button>`;
+                    } else if (paid >= 15000) {
+                        statusHtml = `<span class="badge-match">✅ Đủ Gói Tuần (${paid.toLocaleString()})</span>`;
+                        actionBtn = `<button class="btn btn-approve" onclick="upgradeKey('${item.key}', 7, 2)">DUYỆT 7 NGÀY</button>`;
+                    } else if (paid > 0) {
+                        statusHtml = `<span class="badge-mismatch">⚠️ Lẻ/Thiếu (${paid.toLocaleString()})</span>`;
+                        actionBtn = `<button class="btn btn-approve" style="background:#f59e0b" onclick="upgradeKey('${item.key}', 1, 2)">DUYỆT 1 NGÀY</button>`;
+                    } else {
+                        statusHtml = `<span class="badge-mismatch">❌ Chưa có tiền (0đ)</span>`;
+                        actionBtn = `<button class="btn" style="background:#94a3b8; cursor:not-allowed;">CHỜ TIỀN</button>`;
+                    }
 
                     row.innerHTML = `
                         <td style="font-family:monospace; color:#2563eb;">${item.key}</td>
-                        <td>${item.trans_code} <br> <small style="color:#666">${item.raw_message || ''}</small></td>
+                        <td>
+                            <b>${item.trans_code}</b><br>
+                            <small style="color:#666">${item.raw_message || 'N/A'}</small>
+                        </td>
                         <td style="font-weight:bold;">${paid.toLocaleString()} đ</td>
                         <td>${statusHtml}</td>
-                        <td>
-                            <button class="btn btn-approve" onclick="upgradeKey('${item.key}', ${paid})">DUYỆT</button>
-                        </td>
+                        <td>${actionBtn}</td>
                     `;
                     tbody.appendChild(row);
                 });
-            } catch(e) { tbody.innerHTML = `<tr><td colspan="5" style="color:red">Lỗi: ${e.message}. Kiểm tra lại Secret Key.</td></tr>`; }
+            } catch(e) { tbody.innerHTML = `<tr><td colspan="5" style="color:red">Lỗi: ${e.message}</td></tr>`; }
         }
 
-        async function upgradeKey(key, amount) {
-            let days = 30; // Mặc định
-            if(amount < 20000) days = 7;
-            
-            const finalDays = prompt(`Duyệt key này thành bao nhiêu ngày?\n(Tiền nhận: ${amount.toLocaleString()}đ)`, days);
-            if(!finalDays) return;
+        async function upgradeKey(key, days, devs) {
+            if(!confirm(`Duyệt key này thành ${days} ngày?`)) return;
 
             try {
                 const res = await fetch('/api/admin/upgrade', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET },
-                    body: JSON.stringify({ key, duration: parseInt(finalDays) * 86400, devices: 2 })
+                    body: JSON.stringify({ key, duration: days * 86400, devices: devs })
                 });
                 const d = await res.json();
                 if(d.success) { alert("Đã duyệt thành công!"); loadTempKeys(); }
