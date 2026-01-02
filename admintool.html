@@ -2,81 +2,172 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Panel - Trịnh Hg Tools</title>
+    <title>TrinhHG Admin Panel</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f1f5f9; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h1 { color: #1e293b; }
-        .controls { margin-bottom: 20px; display: flex; gap: 10px; }
-        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
-        button { padding: 8px 15px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+        body { font-family: sans-serif; background: #f1f5f9; padding: 20px; }
+        .container { max-width: 1100px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #1e293b; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+        .tab { padding: 10px 20px; cursor: pointer; font-weight: bold; color: #64748b; }
+        .tab.active { color: #2563eb; border-bottom: 2px solid #2563eb; margin-bottom: -2px; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 14px; }
         th { background: #f8fafc; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; color: white; }
-        .bg-green { background: #10b981; }
-        .bg-yellow { background: #f59e0b; }
+        .btn { padding: 6px 12px; cursor: pointer; color: white; border: none; border-radius: 4px; font-weight: bold; }
+        .btn-approve { background: #10b981; }
+        .btn-refresh { background: #3b82f6; margin-bottom: 10px; }
+        
+        .badge-match { background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; display: inline-block; }
+        .badge-mismatch { background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; display: inline-block; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        input, select { padding: 8px; width: 100%; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .gen-btn { width: 100%; background: #2563eb; color: white; padding: 10px; border: none; border-radius: 4px; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Admin Dashboard</h1>
-        <div class="controls">
-            <input type="text" id="api-url" placeholder="Worker URL (e.g., https://my-worker.workers.dev)">
-            <input type="password" id="secret" placeholder="Admin Secret">
-            <button onclick="loadKeys()">Tải Danh Sách</button>
+        <h1>ADMIN PANEL</h1>
+        <div class="tabs">
+            <div class="tab" onclick="switchTab('create')">Tạo Key Thủ Công</div>
+            <div class="tab active" onclick="switchTab('approve')">Duyệt Key Tạm</div>
         </div>
-        <div id="status"></div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Mã GD</th>
-                    <th>Số tiền</th>
-                    <th>Key Temp</th>
-                    <th>Thời gian</th>
-                    <th>Hành động</th>
-                </tr>
-            </thead>
-            <tbody id="table-body">
+
+        <div id="create" class="panel">
+            <h3>Tạo Key Thủ Công</h3>
+            <p>Copy JSON bên dưới và dán vào Cloudflare KV Namespace nếu cần.</p>
+            <div class="grid-2">
+                <div><label>Loại:</label><select id="mn-type"><option value="permanent">Official</option><option value="temp">Temp</option></select></div>
+                <div><label>Thiết bị:</label><input type="number" id="mn-dev" value="2"></div>
+                <div><label>Ngày:</label><input type="number" id="mn-days" value="30"></div>
+                <div><label>Ghi chú:</label><input type="text" id="mn-note" placeholder="Tên khách"></div>
+            </div>
+            <button class="gen-btn" onclick="genManual()">TẠO DATA JSON</button>
+            <textarea id="mn-out" style="width:100%; height:100px; margin-top:10px; font-family:monospace;"></textarea>
+        </div>
+
+        <div id="approve" class="panel active">
+            <button class="btn btn-refresh" onclick="loadTempKeys()">🔄 Làm mới danh sách</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Key Tạm</th>
+                        <th>Mã GD & Nội dung</th>
+                        <th>Số tiền nhận</th>
+                        <th>Trạng thái tiền</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="temp-table-body">
+                    <tr><td colspan="5">Đang tải dữ liệu...</td></tr>
                 </tbody>
-        </table>
+            </table>
+        </div>
     </div>
 
     <script>
-        async function loadKeys() {
-            const url = document.getElementById('api-url').value;
-            const secret = document.getElementById('secret').value;
-            const tbody = document.getElementById('table-body');
-            
+        const ADMIN_SECRET = "trinhhg_admin_secret_123";
+
+        function switchTab(id) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.target.classList.add('active');
+            if(id === 'approve') loadTempKeys();
+        }
+
+        async function loadTempKeys() {
+            const tbody = document.getElementById('temp-table-body');
+            tbody.innerHTML = '<tr><td colspan="5">Đang tải...</td></tr>';
             try {
-                // Mock Data cho Demo (Thay bằng fetch thực tế)
-                // const res = await fetch(`${url}/api/admin/list-temp`, { headers: { 'x-admin-secret': secret } });
-                // const data = await res.json();
+                // Fetch với header đúng để không bị CORS nếu server xử lý đúng OPTIONS
+                const res = await fetch('/api/admin/list-temp', { 
+                    method: 'GET',
+                    headers: { 'x-admin-secret': ADMIN_SECRET, 'Content-Type': 'application/json' } 
+                });
                 
-                const mockData = [
-                    { code: 'HG123456', amount: 40000, key: 'TEMP-ABC1234', time: '10:00' },
-                    { code: 'HG987654', amount: 15000, key: 'TEMP-XYZ9876', time: '10:05' }
-                ];
+                if(!res.ok) throw new Error("Auth Failed or API Error");
+                const data = await res.json();
+                tbody.innerHTML = '';
+                if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Không có key tạm nào cần duyệt.</td></tr>'; return; }
 
-                tbody.innerHTML = mockData.map(item => `
-                    <tr>
-                        <td><b>${item.code}</b></td>
-                        <td><span class="badge ${item.amount >= 20000 ? 'bg-green' : 'bg-yellow'}">${item.amount.toLocaleString()}</span></td>
-                        <td>${item.key}</td>
-                        <td>${item.time}</td>
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    const paid = item.paid_amount || 0;
+                    
+                    // Logic kiểm tra số tiền (Xanh/Đỏ)
+                    let statusHtml = '';
+                    let actionBtn = '';
+
+                    // Mốc giá: 15k (7 ngày), 40k (30 ngày), 80k (Team)
+                    if (paid >= 40000) {
+                        statusHtml = `<span class="badge-match">✅ Đủ Gói Tháng (${paid.toLocaleString()})</span>`;
+                        actionBtn = `<button class="btn btn-approve" onclick="upgradeKey('${item.key}', 30, 2)">DUYỆT 30 NGÀY</button>`;
+                    } else if (paid >= 15000) {
+                        statusHtml = `<span class="badge-match">✅ Đủ Gói Tuần (${paid.toLocaleString()})</span>`;
+                        actionBtn = `<button class="btn btn-approve" onclick="upgradeKey('${item.key}', 7, 2)">DUYỆT 7 NGÀY</button>`;
+                    } else if (paid > 0) {
+                        statusHtml = `<span class="badge-mismatch">⚠️ Lẻ/Thiếu (${paid.toLocaleString()})</span>`;
+                        actionBtn = `<button class="btn btn-approve" style="background:#f59e0b" onclick="upgradeKey('${item.key}', 1, 2)">DUYỆT 1 NGÀY</button>`;
+                    } else {
+                        statusHtml = `<span class="badge-mismatch">❌ Chưa có tiền (0đ)</span>`;
+                        actionBtn = `<button class="btn" style="background:#94a3b8; cursor:not-allowed;">CHỜ TIỀN</button>`;
+                    }
+
+                    row.innerHTML = `
+                        <td style="font-family:monospace; color:#2563eb;">${item.key}</td>
                         <td>
-                            <button onclick="approve('${item.key}')">Duyệt</button>
-                            <button style="background:#ef4444">Xóa</button>
+                            <b>${item.trans_code}</b><br>
+                            <small style="color:#666">${item.raw_message || 'N/A'}</small>
                         </td>
-                    </tr>
-                `).join('');
-                
-            } catch(e) { alert('Lỗi: ' + e); }
+                        <td style="font-weight:bold;">${paid.toLocaleString()} đ</td>
+                        <td>${statusHtml}</td>
+                        <td>${actionBtn}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch(e) { tbody.innerHTML = `<tr><td colspan="5" style="color:red">Lỗi: ${e.message}</td></tr>`; }
         }
 
-        function approve(key) {
-            if(confirm(`Duyệt key ${key}?`)) alert('Đã gửi lệnh duyệt!');
+        async function upgradeKey(key, days, devs) {
+            if(!confirm(`Duyệt key này thành ${days} ngày?`)) return;
+
+            try {
+                const res = await fetch('/api/admin/upgrade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET },
+                    body: JSON.stringify({ key, duration: days * 86400, devices: devs })
+                });
+                const d = await res.json();
+                if(d.success) { alert("Đã duyệt thành công!"); loadTempKeys(); }
+                else alert("Lỗi: " + d.message);
+            } catch(e) { alert("Lỗi kết nối server"); }
         }
+
+        function genManual() {
+            const type = document.getElementById('mn-type').value;
+            const dev = parseInt(document.getElementById('mn-dev').value);
+            const days = parseInt(document.getElementById('mn-days').value);
+            const note = document.getElementById('mn-note').value;
+            
+            const key = (type==='permanent' ? 'VIP-' : 'TEMP-') + Math.random().toString(36).substr(2, 8).toUpperCase();
+            const data = {
+                type: type, status: type==='permanent' ? 'official' : 'temp',
+                duration_seconds: days * 86400,
+                max_devices: dev,
+                devices: [],
+                activated_at: null,
+                expires_at: null,
+                note: note
+            };
+            
+            document.getElementById('mn-out').value = `KEY: ${key}\nVALUE: ${JSON.stringify(data)}`;
+        }
+        
+        loadTempKeys();
     </script>
 </body>
 </html>
