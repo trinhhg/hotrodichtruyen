@@ -3,8 +3,9 @@ const TG_NOTIFY_BOT_TOKEN = "8317998690:AAEJ51BLc6wp2gRAiTnM2qEyB4sXHYoN7lI";
 const TG_PAYMENT_BOT_TOKEN = "8551019963:AAEld8A0Cibfnl2f-PUtwOvo_ab68_4Il0U"; 
 const TG_ADMIN_ID = "5524168349";
 const ADMIN_SECRET = "trinhhg_admin_secret_123"; 
-const APP_VERSION = "2025.12.12.07";
+const APP_VERSION = "2025.12.12.08";
 
+// Header CORS cho phép Admin Tool chạy từ bất kỳ đâu (kể cả file://)
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS, DELETE",
@@ -15,6 +16,7 @@ export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
 
+  // XỬ LÝ PREFLIGHT REQUEST (QUAN TRỌNG CHO ADMIN TOOL)
   if (request.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -38,7 +40,7 @@ export async function onRequest(context) {
       return m ? m[1] : null;
   }
 
-  // --- 1. WEBHOOK ---
+  // --- 1. WEBHOOK (AUTO BANKING) ---
   if (url.pathname === "/api/webhook" && request.method === "POST") {
       try {
           const data = await request.json();
@@ -78,26 +80,17 @@ export async function onRequest(context) {
       const type = url.searchParams.get("type"); // 'temp' or 'official'
       if(secret !== ADMIN_SECRET) return new Response("Unauthorized", {status: 401, headers: corsHeaders});
 
-      const prefix = type === 'official' ? "" : "TEMP-"; // Official keys might start with VIP- or just be scanned
-      // KV list doesn't support regex, so we fetch all or specific prefix.
-      // Logic cải tiến: Fetch prefix "TEMP-" cho temp. Fetch "VIP-" cho official.
-      
       const pfx = type === 'temp' ? 'TEMP-' : ''; 
       const list = await env.WEB1.list({ prefix: pfx });
       
       const keys = [];
       for(const k of list.keys) {
-          // Bỏ qua các key hệ thống (TRANS_)
           if(k.name.startsWith("TRANS_")) continue;
-
           const val = await env.WEB1.get(k.name);
           if(val) {
               const d = JSON.parse(val);
-              // Filter chính xác
-              if(type === 'temp' && d.status === 'official') continue; // Key temp đã duyệt thì bỏ qua ở list temp
+              if(type === 'temp' && d.status === 'official') continue;
               if(type === 'official' && d.status !== 'official') continue;
-              if(type === 'official' && d.type === 'temp' && d.status !== 'official') continue;
-
               keys.push({ key: k.name, ...d });
           }
       }
@@ -155,7 +148,7 @@ export async function onRequest(context) {
       if(!userKey) return new Response("No Key", {status: 401, headers: corsHeaders});
       
       const val = await env.WEB1.get(userKey);
-      if(!val) return new Response("Invalid", {status: 401, headers: corsHeaders}); // Key bị xóa -> Đá ra
+      if(!val) return new Response("Invalid", {status: 401, headers: corsHeaders}); 
       
       const d = JSON.parse(val);
       if(d.expires_at && Date.now() > d.expires_at) return new Response("Expired", {status: 401, headers: corsHeaders});
@@ -202,12 +195,12 @@ export async function onRequest(context) {
 
         context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, `🚀 <b>LOGIN:</b> ${inputKey}`));
 
-        // FIX LOGIN LOOP: Sử dụng Path=/ và SameSite=Lax
+        // FIX LOGIN LOOP: Sử dụng Path=/ và Max-Age lớn
         return new Response(JSON.stringify({success: true}), {
             status: 200,
             headers: { 
                 "Content-Type": "application/json",
-                "Set-Cookie": `auth_vip=${inputKey}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`, // Quan trọng
+                "Set-Cookie": `auth_vip=${inputKey}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`, 
                 ...corsHeaders 
             },
         });
