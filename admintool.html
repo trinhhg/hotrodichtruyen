@@ -2,105 +2,80 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - EditTruyen</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Admin Panel - Trịnh Hg Tools</title>
     <style>
-        body { font-family: 'Montserrat', sans-serif; background: #f1f5f9; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1 { margin-top: 0; color: #1e293b; display: flex; align-items: center; gap: 10px; }
-        .config-box { background: #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; }
-        input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; flex: 1; }
-        button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        button:hover { background: #1d4ed8; }
-        .btn-refresh { background: #10b981; }
-        
+        body { font-family: sans-serif; padding: 20px; background: #f1f5f9; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { color: #1e293b; }
+        .controls { margin-bottom: 20px; display: flex; gap: 10px; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
+        button { padding: 8px 15px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f8fafc; color: #64748b; font-size: 13px; text-transform: uppercase; }
-        
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; color: white; }
+        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+        th { background: #f8fafc; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; color: white; }
         .bg-green { background: #10b981; }
         .bg-yellow { background: #f59e0b; }
-        .bg-red { background: #ef4444; }
-        
-        .action-btn { padding: 6px 10px; font-size: 12px; margin-right: 5px; }
-        .btn-del { background: #ef4444; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1><i class="fa-solid fa-user-shield"></i> Admin Panel</h1>
-        
-        <div class="config-box">
-            <input type="text" id="api-url" placeholder="Nhập API Worker URL (https://...)">
-            <button class="btn-refresh" onclick="fetchList()"><i class="fa-solid fa-sync"></i> Tải DS Key Tạm</button>
+        <h1>Admin Dashboard</h1>
+        <div class="controls">
+            <input type="text" id="api-url" placeholder="Worker URL (e.g., https://my-worker.workers.dev)">
+            <input type="password" id="secret" placeholder="Admin Secret">
+            <button onclick="loadKeys()">Tải Danh Sách</button>
         </div>
-
-        <div id="key-list">
-            <p style="text-align:center; color:#64748b">Nhập API URL và bấm Tải để xem danh sách chờ duyệt.</p>
-        </div>
+        <div id="status"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã GD</th>
+                    <th>Số tiền</th>
+                    <th>Key Temp</th>
+                    <th>Thời gian</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                </tbody>
+        </table>
     </div>
 
     <script>
-        async function fetchList() {
+        async function loadKeys() {
             const url = document.getElementById('api-url').value;
-            if(!url) return alert('Nhập URL API!');
+            const secret = document.getElementById('secret').value;
+            const tbody = document.getElementById('table-body');
             
             try {
-                // Giả lập fetch
-                // const res = await fetch(url + '/list-temp', { headers: {'x-admin-secret': 'YOUR_SECRET'} });
+                // Mock Data cho Demo (Thay bằng fetch thực tế)
+                // const res = await fetch(`${url}/api/admin/list-temp`, { headers: { 'x-admin-secret': secret } });
                 // const data = await res.json();
                 
-                // Dữ liệu giả lập để test UI
                 const mockData = [
-                    { transCode: 'HG123456', amount: 50000, key: 'TEMP-XKJS72', time: '10:30' },
-                    { transCode: 'HG987654', amount: 10000, key: 'TEMP-MQO992', time: '10:35' }
+                    { code: 'HG123456', amount: 40000, key: 'TEMP-ABC1234', time: '10:00' },
+                    { code: 'HG987654', amount: 15000, key: 'TEMP-XYZ9876', time: '10:05' }
                 ];
-                
-                renderTable(mockData);
-            } catch(e) { alert('Lỗi: ' + e); }
-        }
 
-        function renderTable(data) {
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Mã GD</th>
-                            <th>Số tiền</th>
-                            <th>Key Tạm</th>
-                            <th>Thời gian</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            data.forEach(item => {
-                const badgeColor = item.amount >= 20000 ? 'bg-green' : 'bg-yellow';
-                html += `
+                tbody.innerHTML = mockData.map(item => `
                     <tr>
-                        <td><b>${item.transCode}</b></td>
-                        <td><span class="badge ${badgeColor}">${item.amount.toLocaleString()} đ</span></td>
+                        <td><b>${item.code}</b></td>
+                        <td><span class="badge ${item.amount >= 20000 ? 'bg-green' : 'bg-yellow'}">${item.amount.toLocaleString()}</span></td>
                         <td>${item.key}</td>
                         <td>${item.time}</td>
                         <td>
-                            <button class="action-btn" onclick="approve('${item.key}')">Duyệt</button>
-                            <button class="action-btn btn-del">Xóa</button>
+                            <button onclick="approve('${item.key}')">Duyệt</button>
+                            <button style="background:#ef4444">Xóa</button>
                         </td>
                     </tr>
-                `;
-            });
-            html += '</tbody></table>';
-            document.getElementById('key-list').innerHTML = html;
+                `).join('');
+                
+            } catch(e) { alert('Lỗi: ' + e); }
         }
 
         function approve(key) {
-            if(confirm('Duyệt key này thành chính thức?')) {
-                alert('Đã gửi lệnh duyệt cho ' + key);
-            }
+            if(confirm(`Duyệt key ${key}?`)) alert('Đã gửi lệnh duyệt!');
         }
     </script>
 </body>
