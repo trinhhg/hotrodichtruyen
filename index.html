@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tiện Ích Của Trịnh Hg - Text Processing</title>
+  <title>Tiện Ích Của Trịnh Hg - V23</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="index.css">
@@ -69,11 +69,10 @@
                   <div class="transfer-info">
                       <p>Chủ TK: <b>TRINH THI XUAN HUONG</b></p>
                       <p>Số TK: <b>0917678211 (MB Bank)</b></p>
-                      <p>Nội dung: <b id="trans-content" class="highlight">HG...</b> <i class="fas fa-copy" id="copy-content"></i></p>
+                      <p>Nội dung: <b id="trans-content" class="highlight">HG...</b> <i class="fas fa-copy" id="copy-content" style="cursor:pointer; color:#2563eb;"></i></p>
                   </div>
                   
-                  <button id="btn-check-pay" class="btn btn-warning full-width"><i class="fas fa-sync"></i> KIỂM TRA GIAO DỊCH</button>
-                  <button id="btn-reselect" class="btn btn-secondary btn-sm" style="margin-top:10px;">Chọn lại gói</button>
+                  <button id="btn-reselect" class="btn btn-secondary btn-sm full-width" style="margin-top:10px;">Chọn lại gói khác</button>
                   <div id="pay-status" class="pay-status"></div>
               </div>
           </div>
@@ -82,7 +81,7 @@
       <div class="landing-footer">
           <h3>GIỚI THIỆU & HƯỚNG DẪN</h3>
           <p>Website cung cấp các công cụ: Tìm và thay thế hàng loạt, Auto Caps, Chia chương truyện, Chuẩn hóa format hội thoại...</p>
-          <p>Hệ thống tự động kích hoạt key ngay sau khi chuyển khoản thành công.</p>
+          <p>Hệ thống tự động kích hoạt key ngay sau khi chuyển khoản thành công (trong vòng 30s - 1 phút).</p>
       </div>
   </div>
 
@@ -138,7 +137,9 @@
                     <div class="panel-header">
                       <h2>Danh Sách Cặp Thay Thế</h2>
                       <div class="mode-actions">
-                         <select id="mode-select"></select>
+                         <div class="select-wrapper">
+                             <select id="mode-select"></select>
+                         </div>
                          <button id="add-mode" class="btn btn-primary btn-sm">+ Mới</button>
                          <button id="copy-mode" class="btn btn-secondary btn-sm">Copy</button>
                          <button id="rename-mode" class="btn btn-warning btn-sm">Sửa tên</button>
@@ -146,11 +147,15 @@
                       </div>
                     </div>
                     <div class="toolbar">
-                        <button id="match-case" class="btn btn-toggle">Match Case: Tắt</button>
-                        <button id="whole-word" class="btn btn-toggle">Whole Word: Tắt</button>
-                        <button id="auto-caps" class="btn btn-toggle">Auto Caps: Tắt</button>
-                        <button id="import-settings" class="btn btn-toggle purple">Nhập CSV</button>
-                        <button id="export-settings" class="btn btn-toggle purple">Xuất CSV</button>
+                        <div class="toolbar-group">
+                            <button id="match-case" class="btn btn-toggle">Match Case: Tắt</button>
+                            <button id="whole-word" class="btn btn-toggle">Whole Word: Tắt</button>
+                            <button id="auto-caps" class="btn btn-toggle">Auto Caps: Tắt</button>
+                        </div>
+                        <div class="toolbar-group">
+                            <button id="import-settings" class="btn btn-toggle purple">Nhập CSV</button>
+                            <button id="export-settings" class="btn btn-toggle purple">Xuất CSV</button>
+                        </div>
                     </div>
                     <div class="advanced-settings">
                         <div class="setting-block">
@@ -165,7 +170,7 @@
                        <button id="add-pair" class="btn btn-success icon-btn"><i class="fas fa-plus"></i> Thêm cặp</button>
                        <button id="save-settings" class="btn btn-primary icon-btn"><i class="fas fa-save"></i> Lưu tất cả</button>
                     </div>
-                    <div class="list-container-wrapper">
+                    <div class="scroll-area">
                       <div id="punctuation-list"></div>
                       <div id="empty-state" class="empty-message hidden">Chưa có cặp thay thế nào.</div>
                     </div>
@@ -247,10 +252,13 @@
 
                 <div id="panel-support" class="setting-panel">
                     <div class="panel-header"><h2>Liên Hệ Hỗ Trợ</h2></div>
-                    <div class="support-container" style="padding:30px; text-align:center;">
-                        <i class="fab fa-facebook-messenger" style="font-size: 50px; color: #1877f2; margin-bottom: 20px;"></i>
-                        <p style="font-size:16px; margin-bottom:20px;">Bạn còn thắc mắc hoặc muốn đóng góp ý kiến bổ sung gì thì xin hãy liên hệ với admin bằng nút phía dưới. Mọi ý kiến đóng góp đều được xem xét và thực hiện triển khai ngay lập tức.</p>
-                        <a href="https://www.facebook.com/trinh.hg.57" target="_blank" class="btn btn-primary big-btn">
+                    <div class="support-container" style="padding:30px; text-align:center; display:flex; flex-direction:column; align-items:center;">
+                        <i class="fab fa-facebook-messenger" style="font-size: 60px; color: #1877f2; margin-bottom: 20px;"></i>
+                        <p style="font-size:16px; margin-bottom:30px; line-height:1.6; max-width:600px;">
+                            Bạn còn thắc mắc hoặc muốn đóng góp ý kiến bổ sung gì thì xin hãy liên hệ với admin bằng nút phía dưới. 
+                            Mọi ý kiến đóng góp đều được xem xét và thực hiện triển khai ngay lập tức.
+                        </p>
+                        <a href="https://www.facebook.com/trinh.hg.57" target="_blank" class="btn btn-primary big-btn" style="padding:15px 30px; font-size:16px;">
                             <i class="fab fa-facebook"></i> LIÊN HỆ FACEBOOK TRỊNH HG
                         </a>
                     </div>
@@ -264,15 +272,16 @@
           <div class="split-pane">
             <div class="pane input-pane">
               <div class="pane-header"><span>Văn bản gốc</span><span id="input-word-count" class="badge">Words: 0</span></div>
-              <textarea id="input-text" class="custom-scrollbar" placeholder="Dán văn bản..."></textarea>
-              <div class="pane-footer"><button id="replace-button" class="btn btn-primary full-width">THỰC HIỆN</button></div>
+              <textarea id="input-text" class="custom-scrollbar" placeholder="Dán văn bản cần xử lý vào đây..."></textarea>
+              <div class="pane-footer"><button id="replace-button" class="btn btn-primary full-width">THỰC HIỆN THAY THẾ</button></div>
             </div>
             <div class="pane output-pane">
               <div class="pane-header">
                 <span>Kết quả</span>
                 <div class="counters-group">
-                    <span id="count-replace" class="badge badge-yellow">0</span>
-                    <span id="count-caps" class="badge badge-blue">0</span>
+                    <span id="count-replace" class="badge badge-yellow">Replace: 0</span>
+                    <span id="count-caps" class="badge badge-blue">Auto-Caps: 0</span>
+                    <span id="output-word-count" class="badge">Words: 0</span>
                 </div>
               </div>
               <div id="output-text" class="custom-scrollbar output-div" contenteditable="false"></div>
@@ -294,16 +303,28 @@
                     <button class="split-mode-btn" data-split="3">3</button>
                     <button class="split-mode-btn" data-split="4">4</button>
                     <button class="split-mode-btn" data-split="5">5</button>
+                    <button class="split-mode-btn" data-split="6">6</button>
+                    <button class="split-mode-btn" data-split="7">7</button>
+                    <button class="split-mode-btn" data-split="8">8</button>
+                    <button class="split-mode-btn" data-split="9">9</button>
+                    <button class="split-mode-btn" data-split="10">10</button>
                 </div>
             </div>
             <div id="split-type-regex" class="split-sub-controls hidden">
-                <input type="text" id="split-regex-input" placeholder="^(Chương|Chapter)\s+\d+">
+                <div class="input-with-btn">
+                    <input type="text" id="split-regex-input" placeholder="^(Chương|Chapter)\s+\d+">
+                    <button id="clear-split-regex" class="btn btn-danger btn-sm">Xóa</button>
+                </div>
             </div>
           </div>
           <div class="split-grid-container">
             <div class="split-box input-box">
+              <div class="split-header">
+                  <span>Văn bản gốc</span>
+                  <span id="split-input-word-count" class="badge">Words: 0</span>
+              </div>
               <textarea id="split-input-text" class="custom-scrollbar" placeholder="Dán truyện..."></textarea>
-              <div class="split-footer"><button id="split-action-btn" class="btn btn-primary full-width">Chia Ngay</button></div>
+              <div class="split-footer"><button id="split-action-btn" class="btn btn-primary full-width">Thực Hiện Chia</button></div>
             </div>
             <div id="split-outputs-wrapper" class="outputs-wrapper"></div>
           </div>
