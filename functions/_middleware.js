@@ -1,6 +1,8 @@
 // === CẤU HÌNH HỆ THỐNG ===
-const TG_NOTIFY_BOT_TOKEN = "8317998690:AAEJ51BLc6wp2gRAiTnM2qEyB4sXHYoN7lI"; // Bot báo cáo admin
-const TG_PAYMENT_BOT_TOKEN = "8551019963:AAEld8A0Cibfnl2f-PUtwOvo_ab68_4Il0U"; // Bot nhận tin nhắn từ điện thoại
+// Bot báo cáo Admin (Thông báo có tiền, có login)
+const TG_NOTIFY_BOT_TOKEN = "8317998690:AAEJ51BLc6wp2gRAiTnM2qEyB4sXHYoN7lI"; 
+// Bot nhận tin nhắn từ điện thoại (Webhook MacroDroid gửi về đây)
+const TG_PAYMENT_BOT_TOKEN = "8551019963:AAEld8A0Cibfnl2f-PUtwOvo_ab68_4Il0U"; 
 const TG_ADMIN_ID = "5524168349";
 const APP_VERSION = "2025.12.11.03";
 
@@ -27,26 +29,27 @@ export async function onRequest(context) {
       return m ? m[1] : null;
   }
 
-  // --- 1. WEBHOOK TỪ MACRODROID (Xử lý thanh toán tự động) ---
-  // MacroDroid cần cấu hình POST đến: https://domain-cua-ban.pages.dev/api/webhook
+  // --- 1. WEBHOOK TỪ MACRODROID (QUAN TRỌNG) ---
+  // Nhận thông báo biến động số dư -> Tạo Key -> Báo Admin
   if (url.pathname === "/api/webhook" && request.method === "POST") {
       try {
           const data = await request.json();
+          // Chuẩn hóa dữ liệu từ MacroDroid
           const message = (data.message || "").toUpperCase();
           const title = data.title || "";
           const appName = data.app || "App";
           const time = data.time || new Date().toLocaleString("vi-VN");
 
-          // Bỏ qua tin rác
-          if (title.includes("hiển thị trên") || message.includes("đang chạy")) {
+          // Bỏ qua tin rác hệ thống android
+          if (title.includes("HIỂN THỊ TRÊN") || message.includes("ĐANG CHẠY")) {
              return new Response(JSON.stringify({ skipped: true }));
           }
 
-          // 1. Gửi thông báo về Bot Payment (để Admin theo dõi log)
+          // Gửi log thô về cho Admin qua Bot Payment để debug nếu cần
           const logMsg = `🔔 <b>Giao dịch mới</b>\n📱 App: ${appName}\n💬 ND: ${message}\n⏰ ${time}`;
           context.waitUntil(sendTelegram(TG_PAYMENT_BOT_TOKEN, TG_ADMIN_ID, logMsg));
 
-          // 2. Tự động tìm mã HG (Ví dụ: HG123456)
+          // Tự động tìm mã HG (Ví dụ: HG123456) trong nội dung tin nhắn
           const match = message.match(/HG\d+/);
           if (match) {
               const transCode = match[0];
@@ -65,17 +68,17 @@ export async function onRequest(context) {
                   note: `Auto-gen from Transaction ${transCode}`
               };
 
-              // Lưu Key vào KV
+              // Lưu Key vào KV (Namespace WEB1)
               await env.WEB1.put(tempKey, JSON.stringify(keyData));
-              // Map mã giao dịch sang Key để Client polling
+              // Map mã giao dịch sang Key để Client polling (Lưu trong 1h)
               await env.WEB1.put(`TRANS_${transCode}`, tempKey, {expirationTtl: 3600});
 
-              // Báo Admin (Bot Notify)
+              // Báo Admin (Bot Notify) là đã cấp key thành công
               const successMsg = `
 💰 <b>THANH TOÁN THÀNH CÔNG!</b>
 Mã GD: <code>${transCode}</code>
 Key Tạm: <code>${tempKey}</code>
-<i>Hệ thống đã cấp key tạm cho khách.</i>
+<i>Hệ thống đã tự động cấp key tạm 24h cho khách.</i>
 `;
               context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, successMsg));
           }
@@ -89,7 +92,7 @@ Key Tạm: <code>${tempKey}</code>
 
   // --- 2. API CHECK PAYMENT (Client Polling) ---
   if (url.pathname === "/api/check-payment") {
-      const code = url.searchParams.get("code"); // HGxxxx
+      const code = url.searchParams.get("code");
       if(!code) return new Response("Missing code", {status: 400});
 
       const key = await env.WEB1.get(`TRANS_${code}`);
@@ -151,7 +154,7 @@ Key Tạm: <code>${tempKey}</code>
 
         const keyVal = await env.WEB1.get(inputKey);
         
-        // Return JSON thay vì HTML để Client xử lý UI
+        // Trả về JSON để Frontend hiển thị thông báo
         if (!keyVal) return new Response(JSON.stringify({success: false, message: "Key không tồn tại!"}), {headers:{"Content-Type":"application/json"}});
 
         let keyData = JSON.parse(keyVal);
@@ -207,15 +210,12 @@ Key Tạm: <code>${tempKey}</code>
 
   // --- 6. LOGOUT ---
   if (url.pathname === "/logout") {
-      const userKey = getCookie(request, "auth_vip");
-      if(userKey) context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, `👋 <b>LOGOUT:</b> Key ${userKey}`));
-      
       return new Response(null, { 
           status: 302, 
           headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } 
       });
   }
 
-  // Serve static assets
+  // Serve static assets (HTML, CSS, JS)
   return next();
 }
