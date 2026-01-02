@@ -1,334 +1,274 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tiện Ích Của Trịnh Hg - Text Processing VIP</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="index.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EditTruyen VIP Tool - Trịnh Hg</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
 </head>
 <body>
 
-  <div id="landing-page" class="landing-wrapper">
-      <div class="hero-section">
-          <div class="hero-content">
-              <h1>CÔNG CỤ HỖ TRỢ DỊCH THUẬT & EDIT TRUYỆN</h1>
-              <p class="hero-desc">Hệ thống Replace hàng loạt, Auto Caps, Chia chương truyện tự động. Phiên bản Desktop Ready tối ưu cho Editor chuyên nghiệp.</p>
-              
-              <div class="hero-login">
-                  <h3 class="login-title"><i class="fas fa-key"></i> ĐĂNG NHẬP HỆ THỐNG</h3>
-                  <form id="login-form">
-                      <div class="input-with-icon">
-                          <i class="fas fa-unlock-alt"></i>
-                          <input type="password" id="secret-key-input" placeholder="Nhập License Key..." required>
-                      </div>
-                      <button type="submit" class="btn-hero" id="btn-login-submit">KÍCH HOẠT NGAY <i class="fas fa-arrow-right"></i></button>
-                  </form>
-                  <p class="login-hint">Hệ thống sẽ tự động chuyển vào trang công cụ khi kích hoạt thành công.</p>
-              </div>
-          </div>
-          
-          <div class="hero-image">
-              <div class="feature-badge"><i class="fas fa-magic"></i> Batch Replace</div>
-              <div class="feature-badge"><i class="fas fa-desktop"></i> Desktop Ready</div>
-              <div class="feature-badge"><i class="fas fa-font"></i> Auto Caps</div>
-          </div>
-      </div>
+    <div id="landing-page" class="landing-container">
+        <header class="landing-header">
+            <div class="logo">EditTruyen <span class="badge-pro">PRO</span></div>
+            <a href="https://zalo.me/0917678211" target="_blank" class="contact-link">Liên hệ Admin</a>
+        </header>
 
-      <div class="features-section">
-          <h2>TÍNH NĂNG NỔI BẬT</h2>
-          <div class="features-grid">
-              <div class="feature-card">
-                  <div class="icon-box"><i class="fas fa-sync"></i></div>
-                  <h3>Thay Thế Hàng Loạt</h3>
-                  <p>Tìm và thay thế hàng nghìn từ khóa cùng lúc. Hỗ trợ Regex, giữ nguyên viết hoa/thường (Match Case).</p>
-              </div>
-              <div class="feature-card">
-                  <div class="icon-box"><i class="fas fa-text-height"></i></div>
-                  <h3>Auto Caps & Format</h3>
-                  <p>Tự động viết hoa đầu câu, chuẩn hóa hội thoại (gạch đầu dòng, ngoặc kép), fix lỗi chính tả cơ bản.</p>
-              </div>
-              <div class="feature-card">
-                  <div class="icon-box"><i class="fas fa-cut"></i></div>
-                  <h3>Chia Chương Tự Động</h3>
-                  <p>Tách gộp chương truyện theo số lượng từ hoặc Regex tùy chỉnh. Xuất file nhanh chóng.</p>
-              </div>
-          </div>
-      </div>
-
-      <div class="pricing-section">
-          <h2>MUA KEY TỰ ĐỘNG</h2>
-          <p class="pricing-sub">Quét mã QR - Nhận Key ngay sau 30 giây</p>
-          <div class="buy-widget-container" id="landing-buy-widget">
-              </div>
-      </div>
-
-      <div class="footer">
-          <p>&copy; 2025 Tiện Ích Trịnh Hg. All rights reserved.</p>
-      </div>
-  </div>
-
-  <div id="main-app" class="app-container hidden">
-      <header class="app-header">
-        <div class="header-left">
-          <h1>Tiện Ích Của Trịnh Hg</h1>
-          <div class="donate-info">
-            <span class="donate-label">VIP ACCESS</span>
-            <span class="donate-details">CẢM ƠN BẠN ĐÃ ỦNG HỘ</span>
-          </div>
-        </div>
-        <div class="header-center">
-          <nav class="tabs">
-            <button class="tab-button active" data-tab="settings">Cài Đặt (Replace)</button>
-            <button class="tab-button" data-tab="replace">Thay Thế (Text)</button>
-            <button class="tab-button" data-tab="split">Chia Chương</button>
-          </nav>
-        </div>
-        <div class="header-right">
-            <button id="logout-btn" class="btn btn-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Thoát</button>
-        </div>
-      </header>
-
-      <main class="app-body">
-        
-        <div id="settings" class="tab-content active">
-          <div class="panel-container settings-layout">
+        <main class="hero-section">
+            <h1 class="hero-title">Công Cụ Biên Tập Truyện <br> <span class="gradient-text">Chuyên Nghiệp & Tự Động</span></h1>
+            <p class="hero-desc">Giải pháp tối ưu cho Editor: Thay thế hàng loạt, chuẩn hóa hội thoại và chia chương chỉ trong 1 click.</p>
             
-            <div class="settings-sidebar">
-                <div class="sidebar-title">QUẢN TRỊ</div>
-                <button class="sidebar-btn active" data-target="panel-replacements">
-                    <span><i class="fas fa-list"></i> Danh Sách Thay Thế</span>
+            <div class="login-box">
+                <div class="input-group">
+                    <i class="fa-solid fa-key input-icon"></i>
+                    <input type="text" id="keyInput" placeholder="Nhập Key kích hoạt (Ví dụ: VIP-XXXX)">
+                </div>
+                <button id="btnLogin" class="btn-hero">
+                    <span>KÍCH HOẠT NGAY</span>
+                    <i class="fa-solid fa-arrow-right"></i>
                 </button>
-                <button class="sidebar-btn" data-target="panel-format">
-                    <span><i class="fas fa-quote-right"></i> Chuẩn Hóa Format</span>
-                </button>
+            </div>
+            
+            <div id="pricing-widget" class="pricing-area"></div>
+        </main>
+
+        <section class="features-grid">
+            <div class="feature-card">
+                <div class="icon-box"><i class="fa-solid fa-bolt"></i></div>
+                <h3>Tốc Độ Xử Lý</h3>
+                <p>Xử lý 100 chương truyện chỉ trong vài giây với thuật toán tối ưu.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-box"><i class="fa-solid fa-comments"></i></div>
+                <h3>Format Hội Thoại</h3>
+                <p>Tự động nhận diện và định dạng lại hội thoại (xuống dòng, gạch đầu dòng).</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-box"><i class="fa-solid fa-file-csv"></i></div>
+                <h3>Import/Export</h3>
+                <p>Dễ dàng quản lý data name bằng file CSV, hỗ trợ Regex mạnh mẽ.</p>
+            </div>
+        </section>
+
+        <footer class="landing-footer">
+            <p>© 2026 EditTruyen Tool. Developed by Trịnh Hg.</p>
+        </footer>
+    </div>
+
+    <div id="main-app" class="app-container hidden"> 
+        
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo-small">ET</div>
+                <div class="app-name">EditTruyen Tool</div>
+                <div class="donate-tag">
+                    <span class="pulse-dot"></span>
+                    MB: 0917678211 (TRINH THI XUAN HUONG)
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="vip-status"><i class="fa-solid fa-crown"></i> VIP MEMBER</div>
+                <button id="btnLogout" class="btn-icon" title="Đăng xuất"><i class="fa-solid fa-power-off"></i></button>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <aside class="sidebar">
+                <div class="sidebar-menu">
+                    <div class="menu-label">CÔNG CỤ</div>
+                    <button class="nav-btn active" data-tab="settings">
+                        <i class="fa-solid fa-gear"></i> Cài đặt & Data
+                    </button>
+                    <button class="nav-btn" data-tab="replace">
+                        <i class="fa-solid fa-pen-to-square"></i> Thay thế (Edit)
+                    </button>
+                    <button class="nav-btn" data-tab="split">
+                        <i class="fa-solid fa-scissors"></i> Chia chương
+                    </button>
+                    
+                    <div class="menu-label mt-20">HỆ THỐNG</div>
+                    <div class="key-info-panel">
+                        <div class="key-label">Key hiện tại:</div>
+                        <div class="key-value" id="display-key">VIP-********</div>
+                        <div class="progress-bg">
+                            <div class="progress-bar" style="width: 80%"></div>
+                        </div>
+                        <div class="expire-date">Hết hạn: --/--/----</div>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="content-area">
                 
-                <div class="sidebar-title">TÀI KHOẢN</div>
-                <button class="sidebar-btn" data-target="panel-key-info">
-                    <span><i class="fas fa-key"></i> Thông Tin Key</span>
-                </button>
-                <button class="sidebar-btn" data-target="panel-buy-internal">
-                    <span><i class="fas fa-shopping-cart"></i> Mua / Gia Hạn</span>
-                </button>
-                <button class="sidebar-btn" data-target="panel-support">
-                    <span><i class="fas fa-headset"></i> Hỗ Trợ</span>
-                </button>
-            </div>
-
-            <div class="settings-content">
-                
-                <div id="panel-replacements" class="setting-panel active">
-                    <div class="panel-header">
-                      <h2>Danh Sách Cặp Thay Thế</h2>
-                      <div class="mode-actions">
-                         <div class="select-wrapper">
-                            <label>Chế độ:</label>
-                            <select id="mode-select"></select>
-                         </div>
-                         <button id="add-mode" class="btn btn-primary btn-sm">+ Mới</button>
-                         <button id="copy-mode" class="btn btn-secondary btn-sm">Copy</button>
-                         <button id="rename-mode" class="btn btn-warning btn-sm">Đổi Tên</button>
-                         <button id="delete-mode" class="btn btn-danger btn-sm">Xóa</button>
-                      </div>
-                    </div>
-
-                    <div class="toolbar">
-                      <div class="toolbar-group">
-                        <button id="match-case" class="btn btn-toggle">Match Case: Tắt</button>
-                        <button id="whole-word" class="btn btn-toggle">Whole Word: Tắt</button>
-                        <button id="auto-caps" class="btn btn-toggle">Auto Caps: Tắt</button>
-                      </div>
-                      <div class="toolbar-group">
-                        <button id="import-settings" class="btn btn-toggle purple">Nhập CSV</button>
-                        <button id="export-settings" class="btn btn-toggle purple">Xuất CSV</button>
-                      </div>
-                    </div>
-
-                    <div class="advanced-settings">
-                        <div class="setting-block">
-                            <label>Ngoại lệ Auto Caps:</label>
-                            <div class="input-with-btn">
-                                <input type="text" id="caps-exception" placeholder="Ví dụ: jpg, png, com, vn...">
-                                <button id="save-exception-btn" class="btn btn-primary btn-sm">Lưu</button>
-                            </div>
+                <div id="settings" class="tab-content active">
+                    <div class="settings-wrapper">
+                        <div class="inner-sidebar">
+                            <button class="sidebar-btn active" data-target="panel-replacements">Quản Lý Data</button>
+                            <button class="sidebar-btn" data-target="panel-format">Cấu Hình Format</button>
                         </div>
-                    </div>
 
-                    <div class="list-actions">
-                       <button id="add-pair" class="btn btn-success icon-btn">Thêm cặp mới</button>
-                       <button id="save-settings" class="btn btn-primary icon-btn">Lưu tất cả</button>
-                    </div>
+                        <div class="inner-content">
+                            <div id="panel-replacements" class="setting-panel active">
+                                <div class="panel-top-bar">
+                                    <div class="mode-selector">
+                                        <label>Bộ Data:</label>
+                                        <select id="mode-select" class="form-select"></select>
+                                    </div>
+                                    <div class="action-group-sm">
+                                        <button id="add-mode" class="btn-text">+ Mới</button>
+                                        <button id="rename-mode" class="btn-text">Đổi tên</button>
+                                        <button id="delete-mode" class="btn-text text-danger">Xóa</button>
+                                    </div>
+                                </div>
 
-                    <div class="scroll-area">
-                      <div id="punctuation-list"></div>
-                      <div id="empty-state" class="empty-message hidden">Chưa có cặp thay thế nào.</div>
-                    </div>
-                </div>
+                                <div class="config-toolbar">
+                                    <button id="match-case" class="btn-toggle">Match Case</button>
+                                    <button id="whole-word" class="btn-toggle">Whole Word</button>
+                                    <button id="auto-caps" class="btn-toggle">Auto Caps</button>
+                                    <div class="divider"></div>
+                                    <button id="import-settings" class="btn-outline"><i class="fa-solid fa-upload"></i> Import CSV</button>
+                                    <button id="export-settings" class="btn-outline"><i class="fa-solid fa-download"></i> Export CSV</button>
+                                </div>
+                                
+                                <div class="advanced-input-group">
+                                    <label>Ngoại lệ Auto Caps:</label>
+                                    <div class="input-row">
+                                        <input type="text" id="caps-exception" class="form-input" placeholder="jpg, png, com...">
+                                        <button id="save-exception-btn" class="btn-primary-sm">Lưu</button>
+                                    </div>
+                                </div>
 
-                <div id="panel-format" class="setting-panel">
-                    <div class="panel-header"><h2>Chuẩn Hóa Hội Thoại</h2></div>
-                    <div class="format-container">
-                        <p class="format-desc">Chọn kiểu hiển thị hội thoại. Hệ thống tự động nhận diện ngữ cảnh.</p>
-                        <div class="format-options-grid">
-                            <div class="format-card active" data-format="0">
-                                <div class="card-header"><div class="radio-circle"></div><span>Không thay đổi</span></div>
-                                <div class="card-body">Giữ nguyên văn bản gốc.</div>
-                            </div>
-                            <div class="format-card" data-format="1">
-                                <div class="card-header"><div class="radio-circle"></div><span>Cùng Dòng</span></div>
-                                <div class="card-body">
-                                    <span class="dim">"Chúc mừng năm mới!"</span> Lan nói. <span class="dim">"Cảm ơn bạn."</span>
+                                <div class="data-list-container custom-scrollbar">
+                                    <div id="punctuation-list" class="list-items"></div>
+                                    <div id="empty-state" class="empty-state hidden">
+                                        <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" width="48" alt="Empty">
+                                        <p>Chưa có dữ liệu thay thế</p>
+                                    </div>
+                                </div>
+
+                                <div class="bottom-actions">
+                                    <button id="add-pair" class="btn-secondary full-width"><i class="fa-solid fa-plus"></i> Thêm cặp mới</button>
+                                    <button id="save-settings" class="btn-primary full-width"><i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi</button>
                                 </div>
                             </div>
-                            <div class="format-card" data-format="2">
-                                <div class="card-header"><div class="radio-circle"></div><span>Xuống Dòng</span></div>
-                                <div class="card-body">
-                                    <span class="dim">Lan nói:</span><br><br>"Chúc mừng năm mới!"<br><br>"Cảm ơn bạn."
-                                </div>
-                            </div>
-                            <div class="format-card" data-format="3">
-                                <div class="card-header"><div class="radio-circle"></div><span>Gạch Đầu Dòng</span></div>
-                                <div class="card-body">
-                                    <span class="dim">Lan nói:</span><br><br>- Chúc mừng năm mới!<br><br>- Cảm ơn bạn.
+
+                            <div id="panel-format" class="setting-panel">
+                                <h3>Chọn kiểu hiển thị hội thoại</h3>
+                                <div class="format-cards-grid">
+                                    <div class="format-card" data-format="0">
+                                        <div class="check-circle"></div>
+                                        <div class="card-content">
+                                            <h4>Nguyên bản</h4>
+                                            <p>Giữ nguyên văn bản gốc.</p>
+                                        </div>
+                                    </div>
+                                    <div class="format-card" data-format="1">
+                                        <div class="check-circle"></div>
+                                        <div class="card-content">
+                                            <h4>Mẫu 1: Cùng dòng</h4>
+                                            <p class="preview-text">Hắn cười: "Được thôi."</p>
+                                        </div>
+                                    </div>
+                                    <div class="format-card" data-format="2">
+                                        <div class="check-circle"></div>
+                                        <div class="card-content">
+                                            <h4>Mẫu 2: Xuống dòng</h4>
+                                            <p class="preview-text">Hắn cười:<br><br>"Được thôi."</p>
+                                        </div>
+                                    </div>
+                                    <div class="format-card" data-format="3">
+                                        <div class="check-circle"></div>
+                                        <div class="card-content">
+                                            <h4>Mẫu 3: Gạch đầu dòng</h4>
+                                            <p class="preview-text">Hắn cười:<br><br>- Được thôi.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div id="panel-key-info" class="setting-panel">
-                    <div class="panel-header"><h2>Thông Tin Key</h2></div>
-                    <div class="key-info-container">
-                        <div class="key-card">
-                            <div class="key-row">
-                                <label>License Key:</label>
-                                <div class="key-value-group">
-                                    <span id="display-key">Loading...</span>
-                                    <button id="toggle-key-visibility" class="btn-icon"><i class="fas fa-eye"></i></button>
+                <div id="replace" class="tab-content">
+                    <div class="editor-workspace">
+                        <div class="editor-pane">
+                            <div class="pane-head">
+                                <span><i class="fa-solid fa-file-import"></i> Văn bản gốc</span>
+                                <span id="input-word-count" class="badge-gray">0 Words</span>
+                            </div>
+                            <textarea id="input-text" class="editor-textarea custom-scrollbar" placeholder="Dán nội dung convert vào đây..."></textarea>
+                            <div class="pane-action">
+                                <button id="replace-button" class="btn-action pulse">THỰC HIỆN EDIT <i class="fa-solid fa-play"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-pane">
+                            <div class="pane-head">
+                                <span><i class="fa-solid fa-file-export"></i> Kết quả</span>
+                                <div class="stats-group">
+                                    <span id="count-replace" class="badge-yellow">Rep: 0</span>
+                                    <span id="count-caps" class="badge-blue">Caps: 0</span>
                                 </div>
                             </div>
-                            <div class="key-row">
-                                <label>Trạng thái:</label>
-                                <span id="key-status-badge" class="badge">Checking...</span>
-                            </div>
-                            <div class="key-row">
-                                <label>Hết hạn:</label>
-                                <strong id="expiry-date-display" style="color:#d97706">...</strong>
-                            </div>
-                            <div class="key-row">
-                                <label>Thiết bị:</label>
-                                <span id="device-count">0 / 0</span>
+                            <div id="output-text" class="editor-output custom-scrollbar" contenteditable="false"></div>
+                            <div class="pane-action">
+                                <button id="copy-button" class="btn-success full-width"><i class="fa-solid fa-copy"></i> Sao chép kết quả</button>
                             </div>
                         </div>
-                        <div id="official-timer-block" class="timer-card hidden">
-                            <h3>THỜI GIAN CÒN LẠI</h3>
-                            <div class="timer-grid">
-                                <div class="time-box"><span class="time-label">Đã dùng</span><span id="time-used" class="time-val">...</span></div>
-                                <div class="time-box"><span class="time-label">Còn lại</span><span id="time-left" class="time-val">...</span></div>
+                    </div>
+                </div>
+
+                <div id="split" class="tab-content">
+                    <div class="split-toolbar">
+                        <div class="split-mode-group">
+                            <label class="radio-label">
+                                <input type="radio" name="split-type" value="count" checked> 
+                                <span>Chia đều (Số phần)</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="split-type" value="regex"> 
+                                <span>Chia theo Chương (Regex)</span>
+                            </label>
+                        </div>
+
+                        <div id="split-type-count" class="split-controls">
+                            <div class="number-buttons">
+                                <button class="num-btn active" data-split="2">2</button>
+                                <button class="num-btn" data-split="3">3</button>
+                                <button class="num-btn" data-split="4">4</button>
+                                <button class="num-btn" data-split="5">5</button>
+                                <button class="num-btn" data-split="10">10</button>
                             </div>
-                            <div class="progress-bar-bg"><div id="time-progress" class="progress-bar-fill"></div></div>
+                        </div>
+
+                        <div id="split-type-regex" class="split-controls hidden">
+                            <input type="text" id="split-regex-input" class="form-input" placeholder="Regex: ^(Chương|Chapter)\s+\d+">
+                            <button id="clear-split-regex" class="btn-text text-danger">Xóa Cache</button>
                         </div>
                     </div>
-                </div>
 
-                <div id="panel-buy-internal" class="setting-panel">
-                    <div class="panel-header"><h2>Mua / Gia Hạn Key</h2></div>
-                    <div class="format-container">
-                        <div id="internal-buy-widget"></div>
+                    <div class="split-layout">
+                        <div class="split-input-area">
+                            <div class="pane-head">
+                                <span>Input Full</span>
+                                <span id="split-input-word-count" class="badge-gray">0 Words</span>
+                            </div>
+                            <textarea id="split-input-text" class="editor-textarea custom-scrollbar" placeholder="Dán toàn bộ truyện vào đây..."></textarea>
+                            <button id="split-action-btn" class="btn-primary full-width mt-10">TIẾN HÀNH CHIA</button>
+                        </div>
+                        
+                        <div id="split-outputs-wrapper" class="split-grid-result custom-scrollbar">
+                            </div>
                     </div>
                 </div>
 
-                <div id="panel-support" class="setting-panel">
-                    <div class="panel-header"><h2>Liên Hệ Hỗ Trợ</h2></div>
-                    <div class="support-container" style="padding:30px; text-align:center;">
-                        <i class="fab fa-facebook-messenger" style="font-size: 50px; color: #1877f2; margin-bottom: 20px;"></i>
-                        <p>Bạn còn thắc mắc hoặc muốn đóng góp ý kiến bổ sung gì thì xin hãy liên hệ với admin bằng nút phía dưới.</p>
-                        <a href="https://www.facebook.com/trinh.hg.57" target="_blank" class="btn btn-primary big-btn" style="padding:15px 30px; text-decoration:none; display:inline-block;">
-                            <i class="fab fa-facebook"></i> LIÊN HỆ FACEBOOK TRỊNH HG
-                        </a>
-                    </div>
-                </div>
-
-            </div>
-          </div>
+            </main>
         </div>
-
-        <div id="replace" class="tab-content">
-          <div class="split-pane">
-            <div class="pane input-pane">
-              <div class="pane-header">
-                <span>Văn bản gốc</span>
-                <span id="input-word-count" class="badge">Words: 0</span>
-              </div>
-              <textarea id="input-text" class="custom-scrollbar" placeholder="Dán văn bản cần xử lý vào đây..."></textarea>
-              <div class="pane-footer">
-                <button id="replace-button" class="btn btn-primary full-width">THỰC HIỆN THAY THẾ</button>
-              </div>
-            </div>
-
-            <div class="pane output-pane">
-              <div class="pane-header">
-                <span>Kết quả</span>
-                <div class="counters-group">
-                    <span id="count-replace" class="badge badge-yellow">Replace: 0</span>
-                    <span id="count-caps" class="badge badge-blue">Auto-Caps: 0</span>
-                    <span id="output-word-count" class="badge">Words: 0</span>
-                </div>
-              </div>
-              <div id="output-text" class="custom-scrollbar output-div" contenteditable="false" data-placeholder="Kết quả sẽ hiện ra ở đây..."></div>
-              <div class="pane-footer">
-                <button id="copy-button" class="btn btn-success full-width">Sao chép văn bản (Text Only)</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="split" class="tab-content">
-          <div class="split-controls-wrapper">
-            <div class="split-mode-selector">
-                <label><input type="radio" name="split-type" value="count" checked> Chia theo số phần</label>
-                <label><input type="radio" name="split-type" value="regex"> Chia theo Chương (Regex)</label>
-            </div>
-
-            <div id="split-type-count" class="split-sub-controls">
-                <label>Số phần:</label>
-                <div class="split-buttons-group">
-                <button class="split-mode-btn active" data-split="2">2</button>
-                <button class="split-mode-btn" data-split="3">3</button>
-                <button class="split-mode-btn" data-split="4">4</button>
-                <button class="split-mode-btn" data-split="5">5</button>
-                <button class="split-mode-btn" data-split="10">10</button>
-                </div>
-            </div>
-
-            <div id="split-type-regex" class="split-sub-controls hidden">
-                <div class="input-with-btn">
-                    <input type="text" id="split-regex-input" value="" placeholder="Ví dụ: ^(Chương|Chapter)\s+\d+">
-                    <button id="clear-split-regex" class="btn btn-danger btn-sm">Xóa kết quả</button>
-                </div>
-            </div>
-          </div>
-
-          <div class="split-grid-container">
-            <div id="split-input-container" class="split-box input-box">
-              <div class="split-header">
-                <span>Văn bản gốc</span>
-                <span id="split-input-word-count" class="badge">Words: 0</span>
-              </div>
-              <textarea id="split-input-text" class="custom-scrollbar" placeholder="Dán cả bộ truyện vào đây..."></textarea>
-              <div class="split-footer">
-                <button id="split-action-btn" class="btn btn-primary full-width">Thực Hiện Chia</button>
-              </div>
-            </div>
-            <div id="split-outputs-wrapper" class="outputs-wrapper"></div>
-          </div>
-        </div>
-
-      </main>
-  </div>
-  
-  <div id="notification-container"></div>
-  <script src="index.js"></script>
+    </div>
+    
+    <div id="notification-container"></div>
+    <script src="index.js"></script>
 </body>
 </html>
