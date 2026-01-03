@@ -2,105 +2,102 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - EditTruyen</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Admin Panel - TrinhHG</title>
     <style>
-        body { font-family: 'Montserrat', sans-serif; background: #f1f5f9; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1 { margin-top: 0; color: #1e293b; display: flex; align-items: center; gap: 10px; }
-        .config-box { background: #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; }
-        input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; flex: 1; }
-        button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        button:hover { background: #1d4ed8; }
-        .btn-refresh { background: #10b981; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f8fafc; color: #64748b; font-size: 13px; text-transform: uppercase; }
-        
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; color: white; }
-        .bg-green { background: #10b981; }
-        .bg-yellow { background: #f59e0b; }
-        .bg-red { background: #ef4444; }
-        
-        .action-btn { padding: 6px 10px; font-size: 12px; margin-right: 5px; }
-        .btn-del { background: #ef4444; }
+        body { font-family: sans-serif; background: #f1f5f9; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .config-box { background: #eff6ff; padding: 10px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #dbeafe; display: flex; gap: 10px; }
+        input { padding: 8px; flex: 1; border: 1px solid #ccc; border-radius: 4px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+        .tab { padding: 10px 20px; cursor: pointer; font-weight: bold; color: #64748b; }
+        .tab.active { color: #2563eb; border-bottom: 2px solid #2563eb; margin-bottom: -2px; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; font-size: 13px; }
+        th { background: #f8fafc; }
+        .btn { padding: 6px 12px; cursor: pointer; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 12px; }
+        .btn-approve { background: #10b981; }
+        .btn-reject { background: #ef4444; }
+        .btn-refresh { background: #3b82f6; }
+        .badge { padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+        .badge-green { background: #dcfce7; color: #166534; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1><i class="fa-solid fa-user-shield"></i> Admin Panel</h1>
-        
+        <h1>ADMIN PANEL</h1>
         <div class="config-box">
-            <input type="text" id="api-url" placeholder="Nhập API Worker URL (https://...)">
-            <button class="btn-refresh" onclick="fetchList()"><i class="fa-solid fa-sync"></i> Tải DS Key Tạm</button>
+            <label>Link Web:</label>
+            <input type="text" id="api-url" placeholder="https://..." value="https://hotrodichtruyen.pages.dev">
+        </div>
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('approve')">Duyệt Key Tạm</div>
+            <div class="tab" onclick="switchTab('official')">Key Chính Thức</div>
         </div>
 
-        <div id="key-list">
-            <p style="text-align:center; color:#64748b">Nhập API URL và bấm Tải để xem danh sách chờ duyệt.</p>
+        <div id="approve" class="panel active">
+            <button class="btn btn-refresh" onclick="loadKeys('temp')">🔄 Tải DS Key Tạm</button>
+            <table>
+                <thead><tr><th>Key Tạm</th><th>Thông tin GD</th><th>Số tiền</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+                <tbody id="temp-table-body"><tr><td colspan="5">...</td></tr></tbody>
+            </table>
+        </div>
+
+        <div id="official" class="panel">
+            <button class="btn btn-refresh" onclick="loadKeys('official')">🔄 Tải DS Key Chính Thức</button>
+            <table>
+                <thead><tr><th>Key</th><th>Code/Ghi chú</th><th>Thiết bị</th><th>Hết hạn</th><th>Hành động</th></tr></thead>
+                <tbody id="official-table-body"><tr><td colspan="5">...</td></tr></tbody>
+            </table>
         </div>
     </div>
 
     <script>
-        async function fetchList() {
-            const url = document.getElementById('api-url').value;
-            if(!url) return alert('Nhập URL API!');
-            
+        const SECRET = "trinhhg_admin_secret_123";
+        function switchTab(id) {
+            document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.target.classList.add('active');
+            loadKeys(id==='approve'?'temp':'official');
+        }
+        async function loadKeys(type) {
+            const url = document.getElementById('api-url').value.replace(/\/$/, "");
+            const tbody = document.getElementById(type==='temp'?'temp-table-body':'official-table-body');
             try {
-                // Giả lập fetch
-                // const res = await fetch(url + '/list-temp', { headers: {'x-admin-secret': 'YOUR_SECRET'} });
-                // const data = await res.json();
-                
-                // Dữ liệu giả lập để test UI
-                const mockData = [
-                    { transCode: 'HG123456', amount: 50000, key: 'TEMP-XKJS72', time: '10:30' },
-                    { transCode: 'HG987654', amount: 10000, key: 'TEMP-MQO992', time: '10:35' }
-                ];
-                
-                renderTable(mockData);
-            } catch(e) { alert('Lỗi: ' + e); }
+                const res = await fetch(`${url}/api/admin/list?type=${type}`, { headers: {'x-admin-secret': SECRET} });
+                const data = await res.json();
+                tbody.innerHTML = '';
+                if(!data.length) return tbody.innerHTML = '<tr><td colspan="5">Trống</td></tr>';
+                data.forEach(i => {
+                    const row = document.createElement('tr');
+                    if(type==='temp') {
+                        const p = i.paid_amount || 0;
+                        let st = p>=15000 ? `<span class="badge badge-green">OK</span>` : `<span class="badge badge-red">Thiếu</span>`;
+                        row.innerHTML = `<td>${i.key}</td><td>${i.trans_code}<br><small>${i.raw_message||''}</small></td><td>${p.toLocaleString()}</td><td>${st}</td><td><button class="btn btn-approve" onclick="upg('${i.key}',${p})">DUYỆT</button> <button class="btn btn-reject" onclick="del('${i.key}')">XÓA</button></td>`;
+                    } else {
+                        const left = Math.ceil((i.expires_at - Date.now())/86400000);
+                        row.innerHTML = `<td>${i.key}</td><td>${i.trans_code||i.note}</td><td>${(i.devices||[]).length}/${i.max_devices}</td><td>${left} ngày</td><td><button class="btn btn-reject" onclick="del('${i.key}')">XÓA</button></td>`;
+                    }
+                    tbody.appendChild(row);
+                });
+            } catch(e) { tbody.innerHTML = `<tr><td colspan="5" style="color:red">${e}</td></tr>`; }
         }
-
-        function renderTable(data) {
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Mã GD</th>
-                            <th>Số tiền</th>
-                            <th>Key Tạm</th>
-                            <th>Thời gian</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            data.forEach(item => {
-                const badgeColor = item.amount >= 20000 ? 'bg-green' : 'bg-yellow';
-                html += `
-                    <tr>
-                        <td><b>${item.transCode}</b></td>
-                        <td><span class="badge ${badgeColor}">${item.amount.toLocaleString()} đ</span></td>
-                        <td>${item.key}</td>
-                        <td>${item.time}</td>
-                        <td>
-                            <button class="action-btn" onclick="approve('${item.key}')">Duyệt</button>
-                            <button class="action-btn btn-del">Xóa</button>
-                        </td>
-                    </tr>
-                `;
-            });
-            html += '</tbody></table>';
-            document.getElementById('key-list').innerHTML = html;
+        async function upg(key, amt) {
+            const url = document.getElementById('api-url').value;
+            let d = 30; if(amt < 20000) d = 7;
+            const days = prompt("Duyệt bao nhiêu ngày?", d);
+            if(!days) return;
+            await fetch(`${url}/api/admin/upgrade`, { method:'POST', headers:{'Content-Type':'application/json','x-admin-secret':SECRET}, body:JSON.stringify({key, duration:days*86400, devices:2}) });
+            loadKeys('temp');
         }
-
-        function approve(key) {
-            if(confirm('Duyệt key này thành chính thức?')) {
-                alert('Đã gửi lệnh duyệt cho ' + key);
-            }
+        async function del(key) {
+            const url = document.getElementById('api-url').value;
+            if(!confirm("Xóa key này?")) return;
+            await fetch(`${url}/api/admin/delete`, { method:'POST', headers:{'Content-Type':'application/json','x-admin-secret':SECRET}, body:JSON.stringify({key}) });
+            loadKeys(document.querySelector('.tab.active').getAttribute('onclick').includes('official')?'official':'temp');
         }
     </script>
 </body>
