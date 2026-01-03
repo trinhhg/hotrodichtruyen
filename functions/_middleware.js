@@ -3,9 +3,8 @@ const TG_NOTIFY_BOT_TOKEN = "8317998690:AAEJ51BLc6wp2gRAiTnM2qEyB4sXHYoN7lI";
 const TG_PAYMENT_BOT_TOKEN = "8551019963:AAEld8A0Cibfnl2f-PUtwOvo_ab68_4Il0U"; 
 const TG_ADMIN_ID = "5524168349";
 const ADMIN_SECRET = "trinhhg_admin_secret_123"; 
-const APP_VERSION = "2025.12.12.09";
+const APP_VERSION = "2025.12.12.FINAL";
 
-// Header CORS (Cho phép Admin Tool chạy local gọi được API)
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS, DELETE",
@@ -13,10 +12,10 @@ const corsHeaders = {
 };
 
 export async function onRequest(context) {
-  const { request, env } = context;
+  const { request, env, next } = context;
   const url = new URL(request.url);
 
-  // Xử lý Preflight Request (CORS)
+  // Xử lý Preflight Request (CORS cho Admin Tool)
   if (request.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -33,13 +32,6 @@ export async function onRequest(context) {
       } catch(e) {}
   }
 
-  function getCookie(req, name) {
-      const c = req.headers.get("Cookie");
-      if(!c) return null;
-      const m = c.match(new RegExp(name + "=([^;]+)"));
-      return m ? m[1] : null;
-  }
-
   // --- 1. WEBHOOK (AUTO BANKING) ---
   if (url.pathname === "/api/webhook" && request.method === "POST") {
       try {
@@ -47,19 +39,16 @@ export async function onRequest(context) {
           const message = (data.message || "").toUpperCase(); 
           const title = data.title || "";
           
-          // Bỏ qua tin rác
           if (title.includes("HIỂN THỊ TRÊN") || message.includes("ĐANG CHẠY")) {
              return new Response(JSON.stringify({ skipped: true }), { headers: corsHeaders });
           }
 
-          // A. Bóc tách số tiền (VD: +40,000VND)
+          // Bóc tách số tiền
           let amount = 0;
-          const amountMatch = message.match(/([\d.,]+)\s*VND/);
-          if (amountMatch) {
-              amount = parseInt(amountMatch[1].replace(/[.,]/g, ''));
-          }
+          const amountMatch = message.match(/([+\-]?[\d,.]+)\s*VND/);
+          if (amountMatch) amount = parseInt(amountMatch[1].replace(/[+\-,.]/g, ''));
 
-          // B. Bóc tách Mã HG (HGxxxx)
+          // Bóc tách Mã HG
           const codeMatch = message.match(/HG\d+/);
           
           if (codeMatch) {
@@ -69,8 +58,8 @@ export async function onRequest(context) {
               
               const keyData = {
                   type: "temp",
-                  status: "temp", // Chờ duyệt
-                  duration_seconds: 86400, // 24h dùng thử
+                  status: "temp",
+                  duration_seconds: 86400, // 24h
                   activated_at: now,
                   expires_at: now + 86400000,
                   max_devices: 2,
@@ -78,7 +67,7 @@ export async function onRequest(context) {
                   paid_amount: amount, 
                   trans_code: transCode,
                   raw_message: message, 
-                  note: `Auto-gen: ${transCode}`
+                  note: `Auto: ${transCode}`
               };
 
               // Lưu KV
@@ -86,7 +75,7 @@ export async function onRequest(context) {
               await env.WEB1.put(`TRANS_${transCode}`, tempKey, {expirationTtl: 3600});
 
               // Báo Admin
-              const notifyMsg = `💰 <b>TIỀN VỀ:</b> ${amount.toLocaleString()} VND\nCode: <code>${transCode}</code>\nKey Tạm: <code>${tempKey}</code>`;
+              const notifyMsg = `💰 <b>TIỀN VỀ:</b> ${amount.toLocaleString()} VND\nMã: ${transCode}\nKey Temp: ${tempKey}`;
               context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, notifyMsg));
           }
 
@@ -99,7 +88,7 @@ export async function onRequest(context) {
   // --- 2. ADMIN API: LIST KEYS ---
   if (url.pathname === "/api/admin/list") {
       const secret = request.headers.get("x-admin-secret");
-      const type = url.searchParams.get("type"); // 'temp' or 'official'
+      const type = url.searchParams.get("type"); 
       if(secret !== ADMIN_SECRET) return new Response("Unauthorized", {status: 401, headers: corsHeaders});
 
       const pfx = type === 'temp' ? 'TEMP-' : ''; 
@@ -111,10 +100,8 @@ export async function onRequest(context) {
           const val = await env.WEB1.get(k.name);
           if(val) {
               const d = JSON.parse(val);
-              // Filter logic
               if(type === 'temp' && d.status === 'official') continue;
               if(type === 'official' && d.status !== 'official') continue;
-              
               keys.push({ key: k.name, ...d });
           }
       }
@@ -142,8 +129,6 @@ export async function onRequest(context) {
       data.note += " [APPROVED]";
 
       await env.WEB1.put(key, JSON.stringify(data));
-      context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, `✅ <b>APPROVED:</b> ${key}`));
-      
       return new Response(JSON.stringify({ success: true }), {headers: {...corsHeaders, "Content-Type": "application/json"}});
   }
 
@@ -157,7 +142,7 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ success: true }), {headers: {...corsHeaders, "Content-Type": "application/json"}});
   }
 
-  // --- 5. CHECK PAYMENT ---
+  // --- 5. CHECK PAYMENT (POLLING) ---
   if (url.pathname === "/api/check-payment") {
       const code = url.searchParams.get("code");
       const key = await env.WEB1.get(`TRANS_${code}`);
@@ -166,14 +151,10 @@ export async function onRequest(context) {
           const keyVal = await env.WEB1.get(key);
           if(keyVal) amount = JSON.parse(keyVal).paid_amount || 0;
       }
-      return new Response(JSON.stringify({ 
-          status: key ? 'success' : 'pending', 
-          key: key,
-          amount: amount 
-      }), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+      return new Response(JSON.stringify({ status: key ? 'success' : 'pending', key: key, amount: amount }), {headers: {...corsHeaders, "Content-Type": "application/json"}});
   }
 
-  // --- 6. AUTH & SYSTEM ---
+  // --- 6. AUTH & HEARTBEAT ---
   if (url.pathname === "/api/key-info") {
       const userKey = getCookie(request, "auth_vip");
       if(!userKey) return new Response("Unauthorized", {status: 401, headers: corsHeaders});
@@ -197,6 +178,7 @@ export async function onRequest(context) {
       return new Response("OK", { status: 200, headers: { ...corsHeaders, "x-app-version": APP_VERSION } });
   }
 
+  // --- 7. LOGIN ---
   if (url.pathname === "/login" && request.method === "POST") {
     try {
         const formData = await request.json();
@@ -211,20 +193,20 @@ export async function onRequest(context) {
         const now = Date.now();
 
         if (!keyData.activated_at) { keyData.activated_at = now; keyData.expires_at = now + (keyData.duration_seconds * 1000); keyData.devices = []; }
-        if (keyData.expires_at && now > keyData.expires_at) return new Response(JSON.stringify({success: false, message: "Key đã hết hạn sử dụng!"}), {headers:{"Content-Type":"application/json"}});
+        if (keyData.expires_at && now > keyData.expires_at) return new Response(JSON.stringify({success: false, message: "Key đã hết hạn!"}), {headers:{"Content-Type":"application/json"}});
 
         let devices = keyData.devices || [];
         const existing = devices.find(d => d.id === deviceId);
         if (!existing) {
-            if (devices.length >= keyData.max_devices) return new Response(JSON.stringify({success: false, message: `Key này đã đạt giới hạn ${keyData.max_devices} thiết bị!`}), {headers:{"Content-Type":"application/json"}});
-            devices.push({ id: deviceId, ip: ip, ua: request.headers.get("User-Agent") });
+            if (devices.length >= keyData.max_devices) return new Response(JSON.stringify({success: false, message: `Quá giới hạn ${keyData.max_devices} thiết bị!`}), {headers:{"Content-Type":"application/json"}});
+            devices.push({ id: deviceId, ip: ip });
             keyData.devices = devices;
             await env.WEB1.put(inputKey, JSON.stringify(keyData));
         }
 
         context.waitUntil(sendTelegram(TG_NOTIFY_BOT_TOKEN, TG_ADMIN_ID, `🚀 <b>LOGIN:</b> ${inputKey}`));
 
-        // Set Cookie Path=/ để truy cập toàn trang
+        // Set Cookie cứng, Max Age 1 năm
         return new Response(JSON.stringify({success: true}), {
             status: 200,
             headers: { 
@@ -237,10 +219,15 @@ export async function onRequest(context) {
   }
 
   if (url.pathname === "/logout") {
-      return new Response(null, { 
-          status: 302, 
-          headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } 
-      });
+      return new Response(null, { status: 302, headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } });
+  }
+
+  // Helper lấy cookie
+  function getCookie(req, name) {
+      const c = req.headers.get("Cookie");
+      if(!c) return null;
+      const m = c.match(new RegExp(name + "=([^;]+)"));
+      return m ? m[1] : null;
   }
 
   return next();
