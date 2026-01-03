@@ -2,24 +2,24 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Panel - TrinhHG</title>
+    <title>Admin Panel</title>
     <style>
-        body { font-family: sans-serif; background: #f1f5f9; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .config-box { background: #eff6ff; padding: 10px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #dbeafe; display: flex; gap: 10px; }
-        input { padding: 8px; flex: 1; border: 1px solid #ccc; border-radius: 4px; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+        body { font-family: sans-serif; padding: 20px; background: #f1f5f9; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .config-box { background: #eff6ff; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #dbeafe; display: flex; gap: 10px; }
+        input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; }
         .tab { padding: 10px 20px; cursor: pointer; font-weight: bold; color: #64748b; }
         .tab.active { color: #2563eb; border-bottom: 2px solid #2563eb; margin-bottom: -2px; }
         .panel { display: none; }
         .panel.active { display: block; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
         th { background: #f8fafc; }
-        .btn { padding: 6px 12px; cursor: pointer; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 12px; }
+        .btn { padding: 5px 10px; cursor: pointer; color: white; border: none; border-radius: 4px; font-weight: bold; }
         .btn-approve { background: #10b981; }
         .btn-reject { background: #ef4444; }
-        .btn-refresh { background: #3b82f6; }
+        .btn-refresh { background: #3b82f6; width: 100%; padding: 10px; margin-bottom: 10px; }
         .badge { padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
         .badge-green { background: #dcfce7; color: #166534; }
         .badge-red { background: #fee2e2; color: #991b1b; }
@@ -27,7 +27,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>ADMIN PANEL</h1>
+        <h1>QUẢN TRỊ VIÊN</h1>
         <div class="config-box">
             <label>Link Web:</label>
             <input type="text" id="api-url" placeholder="https://..." value="https://hotrodichtruyen.pages.dev">
@@ -66,6 +66,7 @@
         async function loadKeys(type) {
             const url = document.getElementById('api-url').value.replace(/\/$/, "");
             const tbody = document.getElementById(type==='temp'?'temp-table-body':'official-table-body');
+            tbody.innerHTML = '<tr><td colspan="5">Đang tải...</td></tr>';
             try {
                 const res = await fetch(`${url}/api/admin/list?type=${type}`, { headers: {'x-admin-secret': SECRET} });
                 const data = await res.json();
@@ -75,8 +76,8 @@
                     const row = document.createElement('tr');
                     if(type==='temp') {
                         const p = i.paid_amount || 0;
-                        let st = p>=15000 ? `<span class="badge badge-green">OK</span>` : `<span class="badge badge-red">Thiếu</span>`;
-                        row.innerHTML = `<td>${i.key}</td><td>${i.trans_code}<br><small>${i.raw_message||''}</small></td><td>${p.toLocaleString()}</td><td>${st}</td><td><button class="btn btn-approve" onclick="upg('${i.key}',${p})">DUYỆT</button> <button class="btn btn-reject" onclick="del('${i.key}')">XÓA</button></td>`;
+                        let st = p>=15000 ? `<span class="badge badge-green">ĐỦ TIỀN</span>` : `<span class="badge badge-red">THIẾU/LẺ</span>`;
+                        row.innerHTML = `<td>${i.key}</td><td>${i.trans_code}<br><small>${i.raw_message||''}</small></td><td>${p.toLocaleString()}</td><td>${st}</td><td><button class="btn btn-approve" onclick="upg('${i.key}',${p})">DUYỆT</button> <button class="btn btn-reject" onclick="del('${i.key}')">TỪ CHỐI</button></td>`;
                     } else {
                         const left = Math.ceil((i.expires_at - Date.now())/86400000);
                         row.innerHTML = `<td>${i.key}</td><td>${i.trans_code||i.note}</td><td>${(i.devices||[]).length}/${i.max_devices}</td><td>${left} ngày</td><td><button class="btn btn-reject" onclick="del('${i.key}')">XÓA</button></td>`;
@@ -95,7 +96,7 @@
         }
         async function del(key) {
             const url = document.getElementById('api-url').value;
-            if(!confirm("Xóa key này?")) return;
+            if(!confirm("Xóa/Từ chối key này?")) return;
             await fetch(`${url}/api/admin/delete`, { method:'POST', headers:{'Content-Type':'application/json','x-admin-secret':SECRET}, body:JSON.stringify({key}) });
             loadKeys(document.querySelector('.tab.active').getAttribute('onclick').includes('official')?'official':'temp');
         }
